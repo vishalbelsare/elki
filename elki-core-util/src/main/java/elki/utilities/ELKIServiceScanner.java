@@ -171,16 +171,19 @@ public class ELKIServiceScanner {
    * @author Erich Schubert
    */
   private static class DirClassIterator implements Iterator<String> {
+    /** Class file name extension */
     private static final String CLASS_EXT = ".class";
 
+    /** Factory file name extension */
     private static final String FACTORY_FILE_EXT = FACTORY_POSTFIX + CLASS_EXT;
 
-    private static final int CLASS_EXT_LENGTH = CLASS_EXT.length();
-
+    /** Prefix string */
     private String prefix;
 
+    /** Files */
     private ArrayList<String> files = new ArrayList<>(100);
 
+    /** Folders */
     private ArrayList<File> folders = new ArrayList<>(100);
 
     /**
@@ -223,7 +226,7 @@ public class ELKIServiceScanner {
                 continue;
               }
               final String fullname = new File(path, localname).toString();
-              files.add(fullname.substring(prefix.length(), fullname.length() - CLASS_EXT_LENGTH).replace(File.separatorChar, '.'));
+              files.add(fullname.substring(prefix.length(), fullname.length() - CLASS_EXT.length()).replace(File.separatorChar, '.'));
               continue;
             }
             // Recurse into directories
@@ -262,9 +265,9 @@ public class ELKIServiceScanner {
    */
   private static int comparePackageClass(Class<?> o1, Class<?> o2) {
     return o1.getPackage() == o2.getPackage() ? //
-        o1.getCanonicalName().compareTo(o2.getCanonicalName()) //
+        o1.getCanonicalName().compareToIgnoreCase(o2.getCanonicalName()) //
         : o1.getPackage() == null ? -1 : o2.getPackage() == null ? +1 //
-            : o1.getPackage().getName().compareTo(o2.getPackage().getName());
+            : o1.getPackage().getName().compareToIgnoreCase(o2.getPackage().getName());
   }
 
   /**
@@ -288,6 +291,6 @@ public class ELKIServiceScanner {
   public static final Comparator<Class<?>> SORT_BY_PRIORITY = (o1, o2) -> {
     int c = Integer.compare(classPriority(o2), classPriority(o1));
     c = c != 0 ? c : comparePackageClass(o1, o2);
-    return c != 0 ? c : o1.getCanonicalName().compareTo(o2.getCanonicalName());
+    return c != 0 ? c : o1.getCanonicalName().compareToIgnoreCase(o2.getCanonicalName());
   };
 }

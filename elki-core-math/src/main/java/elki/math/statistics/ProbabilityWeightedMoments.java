@@ -65,6 +65,7 @@ public final class ProbabilityWeightedMoments {
    * Compute the alpha_r factors using the method of probability-weighted
    * moments.
    * 
+   * @param <A> Array type
    * @param data <b>Presorted</b> data array.
    * @param adapter Array adapter.
    * @param nmom Number of moments to compute
@@ -78,7 +79,7 @@ public final class ProbabilityWeightedMoments {
       final double val = adapter.getDouble(data, i);
       xmom[0] += weight * val;
       for(int j = 1; j < nmom; j++) {
-        xmom[j] += val * (weight *= (n - i - j + 1) / (n - j + 1));
+        xmom[j] += val * (weight *= (n - i - j + 1.) / (n - j + 1.));
       }
     }
     return xmom;
@@ -88,6 +89,7 @@ public final class ProbabilityWeightedMoments {
    * Compute the beta_r factors using the method of probability-weighted
    * moments.
    * 
+   * @param <A> Array type
    * @param data <b>Presorted</b> data array.
    * @param adapter Array adapter.
    * @param nmom Number of moments to compute
@@ -101,7 +103,7 @@ public final class ProbabilityWeightedMoments {
       final double val = adapter.getDouble(data, i);
       xmom[0] += weight * val;
       for(int j = 1; j < nmom; j++) {
-        xmom[j] += val * (weight *= (i - j + 1) / (n - j + 1));
+        xmom[j] += val * (weight *= (i - j + 1.) / (n - j + 1.));
       }
     }
     return xmom;
@@ -112,6 +114,7 @@ public final class ProbabilityWeightedMoments {
    * probability-weighted moments. Usually cheaper than computing them
    * separately.
    * 
+   * @param <A> Array type
    * @param data <b>Presorted</b> data array.
    * @param adapter Array adapter.
    * @param nmom Number of moments to compute
@@ -126,8 +129,8 @@ public final class ProbabilityWeightedMoments {
       xmom[0] += aweight * val;
       xmom[1] += bweight * val;
       for(int j = 1, k = 2; j < nmom; j++, k += 2) {
-        xmom[k + 1] += val * (aweight *= (n - i - j + 1) / (n - j + 1));
-        xmom[k + 1] += val * (bweight *= (i - j + 1) / (n - j + 1));
+        xmom[k + 1] += val * (aweight *= (n - i - j + 1.) / (n - j + 1.));
+        xmom[k + 1] += val * (bweight *= (i - j + 1.) / (n - j + 1.));
       }
     }
     return xmom;
@@ -136,6 +139,7 @@ public final class ProbabilityWeightedMoments {
   /**
    * Compute the sample L-Moments using probability weighted moments.
    * 
+   * @param <A> Array type
    * @param sorted <b>Presorted</b> data array.
    * @param adapter Array adapter.
    * @param nmom Number of moments to compute

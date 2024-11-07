@@ -26,21 +26,22 @@ import elki.clustering.kmeans.initialization.RandomlyChosen;
 import elki.clustering.kmedoids.initialization.KMedoidsInitialization;
 import elki.data.Clustering;
 import elki.data.model.MedoidModel;
-import elki.database.datastore.DataStoreFactory;
-import elki.database.datastore.DataStoreUtil;
-import elki.database.datastore.WritableDataStore;
-import elki.database.datastore.WritableIntegerDataStore;
+import elki.database.datastore.*;
 import elki.database.ids.*;
-import elki.database.query.QueryBuilder;
 import elki.database.query.distance.DistanceQuery;
+import elki.database.relation.MaterializedDoubleRelation;
 import elki.database.relation.Relation;
 import elki.distance.Distance;
+import elki.evaluation.clustering.internal.Silhouette;
 import elki.logging.Logging;
 import elki.logging.progress.IndefiniteProgress;
 import elki.logging.statistics.DoubleStatistic;
+import elki.logging.statistics.Duration;
 import elki.logging.statistics.LongStatistic;
 import elki.math.linearalgebra.VMath;
+import elki.result.EvaluationResult;
 import elki.result.Metadata;
+import elki.result.EvaluationResult.MeasurementGroup;
 import elki.utilities.documentation.Reference;
 import elki.utilities.exceptions.AbortException;
 
@@ -63,7 +64,7 @@ import elki.utilities.exceptions.AbortException;
  *
  * @author Erich Schubert
  *
- * @param <O>
+ * @param <O> Input data type
  */
 @Reference(authors = "Lars Lenssen and Erich Schubert", //
     title = "Clustering by Direct Optimization of the Medoid Silhouette", //
@@ -75,26 +76,231 @@ public class FastMSC<O> extends PAMMEDSIL<O> {
    */
   private static final Logging LOG = Logging.getLogger(FastMSC.class);
 
+  /**
+   * Constructor.
+   *
+   * @param distance Distance function
+   * @param k Number of cluster
+   * @param maxiter Maximum number of iterations
+   * @param initializer Initialization
+   */
   public FastMSC(Distance<? super O> distance, int k, int maxiter, KMedoidsInitialization<O> initializer) {
     super(distance, k, maxiter, initializer);
   }
 
-  /**
-   * Run FastMSC
-   *
-   * @param relation relation to use
-   * @return result
-   */
   @Override
-  public Clustering<MedoidModel> run(Relation<O> relation) {
-    Clustering<MedoidModel> result = run(relation, k, new QueryBuilder<>(relation, distance).precomputed().distanceQuery());
-    Metadata.of(result).setLongName("FastMSC Clustering");
-    return result;
+  public Clustering<MedoidModel> run(Relation<O> relation, int k, DistanceQuery<? super O> distQ) {
+    DBIDs ids = relation.getDBIDs();
+    ArrayModifiableDBIDs medoids = initialMedoids(distQ, ids, k);
+    WritableIntegerDataStore assignment = DataStoreUtil.makeIntegerStorage(ids, DataStoreFactory.HINT_HOT | DataStoreFactory.HINT_TEMP, -1);
+    Duration optd = getLogger().newDuration(getClass().getName() + ".optimization-time").begin();
+    DoubleDataStore silhouettes;
+    double sil;
+    if(k == 2) { // optimized codepath for k=2
+      Instance2 instance = new Instance2(distQ, ids, assignment);
+      sil = instance.run(medoids, maxiter);
+      silhouettes = instance.silhouetteScores();
+    }
+    else {
+      Instance instance = new Instance(distQ, ids, assignment);
+      sil = instance.run(medoids, maxiter);
+      silhouettes = instance.silhouetteScores();
+    }
+    getLogger().statistics(optd.end());
+    Clustering<MedoidModel> res = wrapResult(ids, assignment, medoids, "FastMSC Clustering");
+    Metadata.hierarchyOf(res).addChild(new MaterializedDoubleRelation(Silhouette.SILHOUETTE_NAME, ids, silhouettes));
+    EvaluationResult ev = EvaluationResult.findOrCreate(res, "Internal Clustering Evaluation");
+    MeasurementGroup g = ev.findOrCreateGroup("Distance-based");
+    g.addMeasure("Medoid Silhouette", sil, -1., 1., 0., false);
+    return res;
   }
 
-  @Override
-  protected void run(DistanceQuery<? super O> distQ, DBIDs ids, ArrayModifiableDBIDs medoids, WritableIntegerDataStore assignment) {
-    new Instance(distQ, ids, assignment).run(medoids, maxiter);
+  /**
+   * Simplified FastMSC clustering instance for k=2.
+   * <p>
+   * For k=2, we can use a much simpler logic.
+   *
+   * @author Erich Schubert
+   */
+  protected static class Instance2 {
+    /**
+     * Ids to process.
+     */
+    protected DBIDs ids;
+
+    /**
+     * Distance function to use.
+     */
+    protected DistanceQuery<?> distQ;
+
+    /**
+     * Distances to the first medoid.
+     */
+    protected WritableDoubleDataStore dm0;
+
+    /**
+     * Distances to the second medoid.
+     */
+    protected WritableDoubleDataStore dm1;
+
+    /**
+     * Output cluster mapping.
+     */
+    protected WritableIntegerDataStore assignment;
+
+    /**
+     * Constructor.
+     *
+     * @param distQ Distance query
+     * @param ids IDs to process
+     * @param assignment Cluster assignment
+     */
+    public Instance2(DistanceQuery<?> distQ, DBIDs ids, WritableIntegerDataStore assignment) {
+      this.distQ = distQ;
+      this.ids = ids;
+      this.dm0 = DataStoreUtil.makeDoubleStorage(ids, DataStoreFactory.HINT_HOT | DataStoreFactory.HINT_TEMP);
+      this.dm1 = DataStoreUtil.makeDoubleStorage(ids, DataStoreFactory.HINT_HOT | DataStoreFactory.HINT_TEMP);
+      this.assignment = assignment;
+    }
+
+    /**
+     * Run the FastMSC optimization phase.
+     *
+     * @param medoids Initial medoids list
+     * @param maxiter Maximum number of iterations
+     * @return final medoid Silhouette
+     */
+    protected double run(ArrayModifiableDBIDs medoids, int maxiter) {
+      final int k = medoids.size();
+      assert k == 2;
+      // Initial assignment to nearest medoids
+      double sil = assignToNearestCluster(medoids);
+      DBIDArrayIter m = medoids.iter();
+      String key = getClass().getName().replace("$Instance", "");
+      if(LOG.isStatistics()) {
+        LOG.statistics(new DoubleStatistic(key + ".iteration-" + 0 + ".medoid-silhouette", sil));
+      }
+      double[] scratch = new double[k];
+
+      IndefiniteProgress prog = LOG.isVerbose() ? new IndefiniteProgress("FastMSC iteration", LOG) : null;
+      // Swap phase
+      DBIDVar bestid = DBIDUtil.newVar();
+      int iteration = 0;
+      while(iteration < maxiter || maxiter <= 0) {
+        ++iteration;
+        LOG.incrementProcessed(prog);
+        // Try to swap a non-medoid with a medoid member:
+        double best = 0;
+        int bestcluster = -1;
+        // Iterate over all non-medoids:
+        for(DBIDIter j = ids.iter(); j.valid(); j.advance()) {
+          // Compare object to its own medoid.
+          if(DBIDUtil.equal(m.seek(assignment.intValue(j)), j)) {
+            continue; // This is a medoid.
+          }
+          Arrays.fill(scratch, 0);
+          findBestSwap(j, scratch);
+          int b = scratch[0] > scratch[1] ? 0 : 1;
+          double l = scratch[b];
+          if(l > best) {
+            best = l;
+            bestid.set(j);
+            bestcluster = b;
+          }
+        }
+        if(best <= sil) {
+          break;
+        }
+        medoids.set(bestcluster, bestid);
+        sil = doSwap(medoids, bestcluster, bestid);
+        if(LOG.isStatistics()) {
+          LOG.statistics(new DoubleStatistic(key + ".iteration-" + iteration + ".medoid-silhouette", sil));
+        }
+      }
+      LOG.setCompleted(prog);
+      if(LOG.isStatistics()) {
+        LOG.statistics(new LongStatistic(key + ".iterations", iteration));
+        LOG.statistics(new DoubleStatistic(key + ".final-medoid-silhouette", sil));
+      }
+      return sil;
+    }
+
+    /**
+     * Assign each object to the nearest cluster.
+     *
+     * @param means Cluster medoids
+     * @return loss
+     */
+    protected double assignToNearestCluster(ArrayDBIDs means) {
+      DBIDArrayIter miter = means.iter();
+      double silsum = 0;
+      for(DBIDIter iditer = ids.iter(); iditer.valid(); iditer.advance()) {
+        final double di0 = distQ.distance(iditer, miter.seek(0));
+        final double di1 = distQ.distance(iditer, miter.seek(1));
+        assignment.putInt(iditer, di0 < di1 ? 0 : 1);
+        dm0.putDouble(iditer, di0);
+        dm1.putDouble(iditer, di1);
+        silsum += di0 < di1 ? loss(di0, di1) : loss(di1, di0);
+      }
+      return 1. - silsum / ids.size();
+    }
+
+    /**
+     * Compute the loss change when choosing j as new medoid.
+     *
+     * @param j New medoid
+     * @param ploss Loss array
+     */
+    protected void findBestSwap(DBIDRef j, double[] ploss) {
+      for(DBIDIter o = ids.iter(); o.valid(); o.advance()) {
+        final double djo = distQ.distance(j, o);
+        final double dm0o = dm0.doubleValue(o);
+        final double dm1o = dm1.doubleValue(o);
+        ploss[0] += (djo < dm1o) ? loss(djo, dm1o) : loss(dm1o, djo);
+        ploss[1] += (djo < dm0o) ? loss(djo, dm0o) : loss(dm0o, djo);
+      }
+      ploss[0] = 1 - ploss[0] / ids.size();
+      ploss[1] = 1 - ploss[1] / ids.size();
+    }
+
+    /**
+     * Assign each object to the nearest cluster when replacing one medoid.
+     *
+     * @param medoids Cluster medoids
+     * @param b Medoid position index
+     * @param j New medoid
+     * @return medoid silhouette
+     */
+    protected double doSwap(ArrayDBIDs medoids, int b, DBIDRef j) {
+      double silsum = 0;
+      WritableDoubleDataStore dmm = b == 0 ? dm0 : dm1;
+      DoubleDataStore dmx = b == 0 ? dm1 : dm0;
+      for(DBIDIter o = ids.iter(); o.valid(); o.advance()) {
+        final double djo = distQ.distance(j, o);
+        dmm.putDouble(o, djo);
+        final double dmo = dmx.doubleValue(o);
+        int a = djo < dmo ? b : djo > dmo ? 1 - b : assignment.intValue(o);
+        assignment.putInt(o, a);
+        silsum += djo < dmo ? loss(djo, dmo) : loss(dmo, djo);
+      }
+      return 1. - silsum / ids.size();
+    }
+
+    /**
+     * Get the silhouette scores per point (must be run() first)
+     *
+     * @return Silhouette scores
+     */
+    public DoubleDataStore silhouetteScores() {
+      WritableDoubleDataStore silhouettes = DataStoreUtil.makeDoubleStorage(ids, DataStoreFactory.HINT_DB);
+      for(DBIDIter iter = ids.iter(); iter.valid(); iter.advance()) {
+        final int a = assignment.intValue(iter);
+        final double d1 = (a == 0 ? dm0 : dm1).doubleValue(iter);
+        final double d2 = (a == 0 ? dm1 : dm0).doubleValue(iter);
+        silhouettes.putDouble(iter, d1 > 0 ? 1. - d1 / d2 : 1.);
+      }
+      return silhouettes;
+    }
   }
 
   /**
@@ -179,7 +385,7 @@ public class FastMSC<O> extends PAMMEDSIL<O> {
     protected double run(ArrayModifiableDBIDs medoids, int maxiter) {
       final int k = medoids.size();
       // Initial assignment to nearest medoids
-      double sil = 1 - assignToNearestCluster(medoids) / ids.size();
+      double sil = assignToNearestCluster(medoids);
       DBIDArrayIter m = medoids.iter();
       String key = getClass().getName().replace("$Instance", "");
       if(LOG.isStatistics()) {
@@ -190,7 +396,7 @@ public class FastMSC<O> extends PAMMEDSIL<O> {
 
       IndefiniteProgress prog = LOG.isVerbose() ? new IndefiniteProgress("FastMSC iteration", LOG) : null;
       // Swap phase
-      DBIDVar bestid = DBIDUtil.newVar(), lastswap = DBIDUtil.newVar();
+      DBIDVar bestid = DBIDUtil.newVar();
       int iteration = 0;
       while(iteration < maxiter || maxiter <= 0) {
         ++iteration;
@@ -200,9 +406,6 @@ public class FastMSC<O> extends PAMMEDSIL<O> {
         int bestcluster = -1;
         // Iterate over all non-medoids:
         for(DBIDIter j = ids.iter(); j.valid(); j.advance()) {
-          if(DBIDUtil.equal(j, lastswap)) {
-            break; // Entire pass without finding an improvement.
-          }
           // Compare object to its own medoid.
           if(DBIDUtil.equal(m.seek(assignment.get(j).m1), j)) {
             continue; // This is a medoid.
@@ -227,7 +430,6 @@ public class FastMSC<O> extends PAMMEDSIL<O> {
           LOG.statistics(new DoubleStatistic(key + ".iteration-" + iteration + ".medoid-silhouette", sil));
         }
         updateRemovalLoss(losses);
-        lastswap.set(bestid);
       }
       LOG.setCompleted(prog);
       if(LOG.isStatistics()) {
@@ -239,36 +441,6 @@ public class FastMSC<O> extends PAMMEDSIL<O> {
         output.putInt(j, assignment.get(j).m1);
       }
       return sil;
-    }
-
-    /**
-     * Compute the loss change when choosing j as new medoid.
-     *
-     * @param j New medoid
-     * @param ploss Loss array
-     * @return Shared loss term
-     */
-    protected double findBestSwap(DBIDRef j, double[] ploss) {
-      double acc = 0;
-      for(DBIDIter o = ids.iter(); o.valid(); o.advance()) {
-        final double djo = distQ.distance(j, o);
-        Record reco = assignment.get(o);
-        if(djo < reco.d1) {
-          acc += loss(reco.d1, reco.d2) - loss(djo, reco.d1);
-          ploss[reco.m1] += loss(djo, reco.d1) + loss(reco.d2, reco.d3) - loss(reco.d1 + djo, reco.d2);
-          ploss[reco.m2] += loss(reco.d1, reco.d3) - loss(reco.d1, reco.d2);
-        }
-        else if(djo < reco.d2) {
-          acc += loss(reco.d1, reco.d2) - loss(reco.d1, djo);
-          ploss[reco.m1] += loss(reco.d1, djo) + loss(reco.d2, reco.d3) - loss(reco.d1 + djo, reco.d2);
-          ploss[reco.m2] += loss(reco.d1, reco.d3) - loss(reco.d1, reco.d2);
-        }
-        else if(djo < reco.d3) {
-          ploss[reco.m1] += loss(reco.d2, reco.d3) - loss(reco.d2, djo);
-          ploss[reco.m2] += loss(reco.d1, reco.d3) - loss(reco.d1, djo);
-        }
-      }
-      return acc;
     }
 
     /**
@@ -312,13 +484,43 @@ public class FastMSC<O> extends PAMMEDSIL<O> {
         assert rec.d1 <= rec.d2;
         assert rec.d2 <= rec.d3;
       }
-      return loss;
+      return 1. - loss / ids.size();
+    }
+
+    /**
+     * Compute the loss change when choosing j as new medoid.
+     *
+     * @param j New medoid
+     * @param ploss Loss array
+     * @return Shared loss term
+     */
+    protected double findBestSwap(DBIDRef j, double[] ploss) {
+      double acc = 0;
+      for(DBIDIter o = ids.iter(); o.valid(); o.advance()) {
+        final double djo = distQ.distance(j, o);
+        Record reco = assignment.get(o);
+        if(djo < reco.d1) {
+          acc += loss(reco.d1, reco.d2) - loss(djo, reco.d1);
+          ploss[reco.m1] += loss(djo, reco.d1) + loss(reco.d2, reco.d3) - loss(reco.d1 + djo, reco.d2);
+          ploss[reco.m2] += loss(reco.d1, reco.d3) - loss(reco.d1, reco.d2);
+        }
+        else if(djo < reco.d2) {
+          acc += loss(reco.d1, reco.d2) - loss(reco.d1, djo);
+          ploss[reco.m1] += loss(reco.d1, djo) + loss(reco.d2, reco.d3) - loss(reco.d1 + djo, reco.d2);
+          ploss[reco.m2] += loss(reco.d1, reco.d3) - loss(reco.d1, reco.d2);
+        }
+        else if(djo < reco.d3) {
+          ploss[reco.m1] += loss(reco.d2, reco.d3) - loss(reco.d2, djo);
+          ploss[reco.m2] += loss(reco.d1, reco.d3) - loss(reco.d1, djo);
+        }
+      }
+      return acc;
     }
 
     /**
      * Assign each object to the nearest cluster when replacing one medoid.
      *
-     * @param means Cluster medoids
+     * @param medoids Cluster medoids
      * @param b Medoid position index
      * @param j New medoid
      * @return medoid silhouette
@@ -456,6 +658,20 @@ public class FastMSC<O> extends PAMMEDSIL<O> {
         losses[reco.m1] += l12 - loss(reco.d2, reco.d3);
         losses[reco.m2] += l12 - loss(reco.d1, reco.d3);
       }
+    }
+
+    /**
+     * Get the silhouette scores per point (must be run() first)
+     *
+     * @return Silhouette scores
+     */
+    public DoubleDataStore silhouetteScores() {
+      WritableDoubleDataStore silhouettes = DataStoreUtil.makeDoubleStorage(ids, DataStoreFactory.HINT_DB);
+      for(DBIDIter iter = ids.iter(); iter.valid(); iter.advance()) {
+        final Record rec = assignment.get(iter);
+        silhouettes.putDouble(iter, rec.d1 > 0 ? 1. - rec.d1 / rec.d2 : 1.);
+      }
+      return silhouettes;
     }
   }
 

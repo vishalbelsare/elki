@@ -34,7 +34,7 @@ import elki.result.textwriter.TextWriterStream;
  * <p>
  * A hierarchy object of class SimpleHierarchy will be created automatically
  * when a list of parents and children is provided. Alternatively, a
- * pre-existing hierarchy object can be provided, e.g. when there is a single
+ * pre-existing hierarchy object can be provided, e.g., when there is a single
  * hierarchy object used for keeping all the hierarchy information in one
  * object.
  * 
@@ -270,15 +270,13 @@ public class Cluster<M extends Model> implements TextWriteable {
 
   /**
    * A partial comparator for Clusters, based on their name. Useful for sorting
-   * clusters. Do NOT use in e.g. a TreeSet since it is
+   * clusters. Do NOT use in, e.g., a TreeSet since it is
    * <em>inconsistent with equals</em>.
    */
   public static final Comparator<Cluster<?>> BY_NAME_SORTER = (o1, o2) -> //
   o1 == o2 ? 0 : o1 == null ? +1 : o2 == null ? -1 : //
-  // sort by label if possible
-      o1.name != o2.name ? (o1.name == null ? +1 : o2.name == null ? -1 : o1.name.compareTo(o2.name)) : 0;
+      o1.name == o2.name ? 0 : (o1.name == null ? +1 : o2.name == null ? -1 : o1.name.compareTo(o2.name));
 
-  /** {@inheritDoc} */
   @Override
   public String toString() {
     return "Cluster(name=" + getName() + ",size=" + size() + ",model=" //

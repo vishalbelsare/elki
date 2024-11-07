@@ -62,7 +62,7 @@ import elki.utilities.optionhandling.parameters.StringParameter;
  * <li>Each line is a different algorithm</li>
  * <li>There is a mandatory label column, containing the method name</li>
  * <li>The first line <i>must</i> contain the ground-truth, titled
- * <tt>bylabel</tt>, where <tt>0</tt> indicates an inlier and <tt>1</tt>
+ * <code>bylabel</code>, where <code>0</code> indicates an inlier and <code>1</code>
  * indicates an outlier</li>
  * </ul>
  * The evaluation assumes that high scores correspond to outliers, unless the
@@ -197,6 +197,11 @@ public class EvaluatePrecomputedOutlierScores extends AbstractApplication {
     }
   }
 
+  /**
+   * Write the CSV header row
+   * 
+   * @param fout Output file
+   */
   private void writeHeader(PrintStream fout) {
     // Write CSV header:
     fout.append(name != null ? "\"Name\"," : "") //
@@ -219,6 +224,13 @@ public class EvaluatePrecomputedOutlierScores extends AbstractApplication {
         .append('\n');
   }
 
+  /**
+   * Process one row of data.
+   * 
+   * @param fout Output file
+   * @param vec Score vector
+   * @param label Method label
+   */
   private void processRow(PrintStream fout, NumberVector vec, String label) {
     if(checkForNaNs(vec)) {
       LOG.warning("NaN value encountered in vector " + label);
@@ -251,7 +263,13 @@ public class EvaluatePrecomputedOutlierScores extends AbstractApplication {
     double adjdcg = (ndcg - endcg) / (1 - endcg);
     final int p = label.lastIndexOf('-');
     String prefix = label.substring(0, p);
-    int k = Integer.valueOf(label.substring(p + 1));
+    int k = 0;
+    try {
+      k = Integer.valueOf(label.substring(p + 1));
+    }
+    catch(NumberFormatException e) {
+      LOG.error("Expected a number in label '" + label + "'");
+    }
     // Write CSV
     if(name != null) {
       fout.append('"').append(name).append("\",");

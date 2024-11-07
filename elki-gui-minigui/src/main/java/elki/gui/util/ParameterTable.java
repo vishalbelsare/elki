@@ -46,6 +46,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
@@ -88,22 +89,42 @@ public class ParameterTable extends JTable {
   /**
    * Color for parameters that are not optional and not yet specified.
    */
-  static final Color COLOR_INCOMPLETE = new Color(0xFFCF9F);
+  static final Color COLOR_INCOMPLETE = new Color(0xf8d0a9);
 
   /**
    * Color for parameters with an invalid value.
    */
-  static final Color COLOR_SYNTAX_ERROR = new Color(0xFFAFAF);
+  static final Color COLOR_SYNTAX_ERROR = new Color(0xec8e8d);
 
   /**
    * Color for optional parameters (with no default value)
    */
-  static final Color COLOR_OPTIONAL = new Color(0xEFFFEF);
+  static final Color COLOR_OPTIONAL = new Color(0xe4e8e8);
 
   /**
    * Color for parameters having a default value.
    */
-  static final Color COLOR_DEFAULT_VALUE = new Color(0xEFEFEF);
+  static final Color COLOR_DEFAULT_VALUE = new Color(0xf3f5e6);
+
+  /**
+   * Color for parameters that are not optional and not yet specified.
+   */
+  static final Color COLOR_INCOMPLETE_DARK = new Color(0x693704);
+
+  /**
+   * Color for parameters with an invalid value.
+   */
+  static final Color COLOR_SYNTAX_ERROR_DARK = new Color(0x841e1c);
+
+  /**
+   * Color for optional parameters (with no default value)
+   */
+  static final Color COLOR_OPTIONAL_DARK = new Color(0x2c3030);
+
+  /**
+   * Color for parameters having a default value.
+   */
+  static final Color COLOR_DEFAULT_VALUE_DARK = new Color(0x2f3600);
 
   /**
    * Containing frame.
@@ -199,10 +220,19 @@ public class ParameterTable extends JTable {
     private static final long serialVersionUID = 1L;
 
     /**
+     * Use dark mode
+     */
+    private boolean dark;
+
+    /**
      * Constructor.
      */
     public ColorfulRenderer() {
       super();
+      Color bg = UIManager.getColor("Panel.background");
+      if(bg != null) {
+        this.dark = bg.getRed() + bg.getGreen() + bg.getBlue() < (3*128);
+      }
     }
 
     @Override
@@ -234,14 +264,25 @@ public class ParameterTable extends JTable {
       if(!hasFocus) {
         if(row < parameters.size()) {
           int flags = parameters.getNode(row).flags;
-          // TODO: don't hardcode black - maybe mix the other colors, too?
-          c.setForeground(Color.BLACK);
-          c.setBackground((flags & DynamicParameters.BIT_INVALID) != 0 ? COLOR_SYNTAX_ERROR : //
-              (flags & DynamicParameters.BIT_SYNTAX_ERROR) != 0 ? COLOR_SYNTAX_ERROR : //
-                  (flags & DynamicParameters.BIT_INCOMPLETE) != 0 ? COLOR_INCOMPLETE : //
-                      (flags & DynamicParameters.BIT_DEFAULT_VALUE) != 0 ? COLOR_DEFAULT_VALUE : //
-                          (flags & DynamicParameters.BIT_OPTIONAL) != 0 ? COLOR_OPTIONAL : //
-                              null); // Default
+          // TODO: use color mixing, rather than two modes
+          if(dark) {
+            c.setForeground(Color.WHITE);
+            c.setBackground((flags & DynamicParameters.BIT_INVALID) != 0 ? COLOR_SYNTAX_ERROR_DARK : //
+                (flags & DynamicParameters.BIT_SYNTAX_ERROR) != 0 ? COLOR_SYNTAX_ERROR_DARK : //
+                    (flags & DynamicParameters.BIT_INCOMPLETE) != 0 ? COLOR_INCOMPLETE_DARK : //
+                        (flags & DynamicParameters.BIT_DEFAULT_VALUE) != 0 ? COLOR_DEFAULT_VALUE_DARK : //
+                            (flags & DynamicParameters.BIT_OPTIONAL) != 0 ? COLOR_OPTIONAL_DARK : //
+                                null); // Default
+          }
+          else {
+            c.setForeground(Color.BLACK);
+            c.setBackground((flags & DynamicParameters.BIT_INVALID) != 0 ? COLOR_SYNTAX_ERROR : //
+                (flags & DynamicParameters.BIT_SYNTAX_ERROR) != 0 ? COLOR_SYNTAX_ERROR : //
+                    (flags & DynamicParameters.BIT_INCOMPLETE) != 0 ? COLOR_INCOMPLETE : //
+                        (flags & DynamicParameters.BIT_DEFAULT_VALUE) != 0 ? COLOR_DEFAULT_VALUE : //
+                            (flags & DynamicParameters.BIT_OPTIONAL) != 0 ? COLOR_OPTIONAL : //
+                                null); // Default
+          }
         }
       }
       return c;
@@ -322,13 +363,10 @@ public class ParameterTable extends JTable {
       Object val = table.getValueAt(row, column);
       if(val != null && val instanceof String) {
         String sval = (String) val;
-        if(sval.equals(DynamicParameters.STRING_OPTIONAL)) {
+        if(sval.equals(DynamicParameters.STRING_OPTIONAL) || sval.startsWith(DynamicParameters.STRING_USE_DEFAULT)) {
           sval = "";
         }
-        if(sval.startsWith(DynamicParameters.STRING_USE_DEFAULT)) {
-          sval = "";
-        }
-        if(sval != "") {
+        else if(sval.length() > 0) {
           comboBox.addItem(sval);
           comboBox.setSelectedIndex(0);
         }
@@ -340,7 +378,7 @@ public class ParameterTable extends JTable {
           if(!Flag.SET.equals(val)) {
             comboBox.addItem(Flag.SET);
           }
-          if(!Flag.NOT_SET.equals(val)) {
+          else if(!Flag.NOT_SET.equals(val)) {
             comboBox.addItem(Flag.NOT_SET);
           }
         }
@@ -561,7 +599,7 @@ public class ParameterTable extends JTable {
         return;
       }
       if(e.getSource() == popup) {
-        if(e.getActionCommand() == TreePopup.ACTION_CANCELED) {
+        if(TreePopup.ACTION_CANCELED.equals(e.getActionCommand())) {
           popup.setVisible(false);
           textfield.requestFocus();
           return;
@@ -577,8 +615,7 @@ public class ParameterTable extends JTable {
                   || val.startsWith(DynamicParameters.STRING_USE_DEFAULT)) {
                 val = "";
               }
-              val = val.isEmpty() ? newClass : val + ClassListParameter.LIST_SEP + newClass;
-              textfield.setText(val);
+              textfield.setText(val.isEmpty() ? newClass : val + ClassListParameter.LIST_SEP + newClass);
             }
             else {
               textfield.setText(newClass);
@@ -752,7 +789,7 @@ public class ParameterTable extends JTable {
    *
    * @author Erich Schubert
    */
-  private class DispatchingPanel extends JPanel {
+  private static class DispatchingPanel extends JPanel {
     /**
      * Serial version.
      */

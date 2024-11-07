@@ -214,7 +214,7 @@ public class KMLOutputHandler implements ResultHandler {
       xmlw.writeCharacters("ELKI KML output for " + Metadata.of(outlierResult).getLongName());
       xmlw.writeEndElement(); // name
       writeNewlineOnDebug(xmlw);
-      // TODO: e.g. list the settings in the description?
+      // TODO: e.g., list the settings in the description?
       xmlw.writeStartElement("description");
       xmlw.writeCharacters("ELKI KML output for " + Metadata.of(outlierResult).getLongName());
       xmlw.writeEndElement(); // description
@@ -362,7 +362,7 @@ public class KMLOutputHandler implements ResultHandler {
       xmlw.writeCharacters("ELKI KML output for " + Metadata.of(clustering).getLongName());
       xmlw.writeEndElement(); // name
       writeNewlineOnDebug(xmlw);
-      // TODO: e.g. list the settings in the description?
+      // TODO: e.g., list the settings in the description?
       xmlw.writeStartElement("description");
       xmlw.writeCharacters("ELKI KML output for " + Metadata.of(clustering).getLongName());
       xmlw.writeEndElement(); // description
@@ -500,6 +500,8 @@ public class KMLOutputHandler implements ResultHandler {
    * @param clu Current cluster
    * @param hier Clustering hierarchy
    * @param hulls Hull map
+   * @param coords Coordinates of points
+   * @return weight and polygon
    */
   private DoubleObjPair<Polygon> buildHullsRecursively(Cluster<Model> clu, Hierarchy<Cluster<Model>> hier, Map<Object, DoubleObjPair<Polygon>> hulls, Relation<? extends NumberVector> coords) {
     final DBIDs ids = clu.getIDs();
@@ -575,7 +577,7 @@ public class KMLOutputHandler implements ResultHandler {
    * Print a newline when debugging.
    * 
    * @param out Output XML stream
-   * @throws XMLStreamException
+   * @throws XMLStreamException on XML errors
    */
   private void writeNewlineOnDebug(XMLStreamWriter out) throws XMLStreamException {
     if(LOG.isDebugging()) {

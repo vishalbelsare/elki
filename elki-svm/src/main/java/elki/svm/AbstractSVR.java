@@ -27,12 +27,35 @@ import elki.svm.model.ProbabilisticRegressionModel;
 import elki.svm.model.RegressionModel;
 import elki.svm.solver.Solver.SolutionInfo;
 
+/**
+ * Abstract Support Vector Regression Machine
+ */
 public abstract class AbstractSVR extends AbstractSingleSVM {
-  public AbstractSVR(double eps, boolean shrinking, double cache_size) {
-    super(eps, shrinking, cache_size);
+  /**
+   * Estimate probabilities via cross-validation
+   */
+  boolean probability = false;
+
+  /**
+   * Constructor.
+   * 
+   * @param tol Optimizer tolerance
+   * @param shrinking Use shrinking
+   * @param cache_size Cache size
+   * @param probability Estimate probabilities
+   */
+  public AbstractSVR(double tol, boolean shrinking, double cache_size, boolean probability) {
+    super(tol, shrinking, cache_size);
+    this.probability = probability;
   }
 
-  // Perform cross-validation.
+  /**
+   * Perform cross-validation.
+   * 
+   * @param x Data set
+   * @param nr_fold Number of folds
+   * @param target Predicted values
+   */
   public void cross_validation(DataSet x, int nr_fold, double[] target) {
     final int l = x.size();
     int[] perm = shuffledIndex(new int[l], l);
@@ -56,7 +79,13 @@ public abstract class AbstractSVR extends AbstractSingleSVM {
     }
   }
 
-  private double svr_probability(DataSet x, double[] probA) {
+  /**
+   * SVR probability of a data set.
+   * 
+   * @param x Data set
+   * @return Average probability
+   */
+  private double svr_probability(DataSet x) {
     final int l = x.size();
     int nr_fold = 5;
 
@@ -73,33 +102,31 @@ public abstract class AbstractSVR extends AbstractSingleSVM {
     for(int i = 0; i < l; i++) {
       if(Math.abs(ymv[i]) > 5 * std) {
         ++count;
+        continue;
       }
-      else {
-        mae += Math.abs(ymv[i]);
-      }
+      mae += Math.abs(ymv[i]);
     }
     mae /= (l - count);
-    getLogger().debug("Prob. model for test data: target value = predicted value + z,\n" + "z: Laplace distribution e^(-|z|/sigma)/(2sigma),sigma=" + mae);
+    if(getLogger().isDebugging()) {
+      getLogger().debug("Prob. model for test data: target value = predicted value + z,\n" + "z: Laplace distribution e^(-|z|/sigma)/(2sigma),sigma=" + mae);
+    }
     return mae;
   }
 
-  boolean probability = false;
-
+  /**
+   * Train on a data set.
+   * 
+   * @param x Data set
+   * @return Regression model
+   */
   public RegressionModel train(DataSet x) {
     SolutionInfo si = train_one(x);
-    RegressionModel model;
-    if(!probability) {
-      model = new RegressionModel();
-    }
-    else {
-      double[] probA = new double[1];
-      probA[0] = svr_probability(x, probA);
-      model = new ProbabilisticRegressionModel(probA);
-    }
+    RegressionModel model = probability ? //
+        new ProbabilisticRegressionModel(svr_probability(x)) //
+        : new RegressionModel();
     model.nr_class = 2;
     model.sv_coef = new double[1][];
     model.rho = new double[] { si.rho };
-    model.r_square = si.r_square;
 
     int nSV = 0;
     for(int i = 0; i < x.size(); i++) {
@@ -107,13 +134,10 @@ public abstract class AbstractSVR extends AbstractSingleSVM {
         ++nSV;
       }
     }
-    model.l = nSV;
-    // model.SV = new ArrayList<Object>(nSV);
     double[] coef = model.sv_coef[0] = new double[nSV];
     model.sv_indices = new int[nSV];
     for(int i = 0, j = 0; i < x.size(); i++) {
       if(nonzero(si.alpha[i])) {
-        // model.SV.add(x.get(i));
         coef[j] = si.alpha[i];
         model.sv_indices[j] = i;
         ++j;

@@ -1,3 +1,23 @@
+/*
+ * This file is part of ELKI:
+ * Environment for Developing KDD-Applications Supported by Index-Structures
+ * 
+ * Copyright (C) 2022
+ * ELKI Development Team
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package elki.svm;
 
 import java.util.Arrays;
@@ -11,17 +31,45 @@ import elki.svm.solver.Solver;
 
 import net.jafama.FastMath;
 
+/**
+ * Abstract Support Vector Machine for Classification.
+ */
 public abstract class AbstractSVC extends AbstractSingleSVM {
-  public AbstractSVC(double eps, boolean shrinking, double cache_size) {
-    super(eps, shrinking, cache_size);
-  }
-
+  /**
+   * Estimate probabilities
+   */
   boolean probability = false;
 
+  /**
+   * Constructor.
+   * 
+   * @param tol Optimizer tolerance
+   * @param shrinking Use shrinking
+   * @param cache_size Cache size
+   * @param probability Estimate probabilities
+   */
+  public AbstractSVC(double tol, boolean shrinking, double cache_size, boolean probability) {
+    super(tol, shrinking, cache_size);
+    this.probability = probability;
+  }
+
+  /**
+   * Train on a data set
+   * 
+   * @param x Data set
+   * @return Classification model
+   */
   public ClassificationModel train(DataSet x) {
     return train(x, null);
   }
 
+  /**
+   * Train on a data set with class weights.
+   * 
+   * @param x Data set
+   * @param weighted_C Class weights
+   * @return Classification model
+   */
   public ClassificationModel train(DataSet x, double[] weighted_C) {
     final int l = x.size();
 
@@ -87,12 +135,14 @@ public abstract class AbstractSVC extends AbstractSingleSVM {
             nonzero[m] = true;
           }
         }
-        LOG.verbose("Trained " + (p + 1) + " of " + ((nr_class * (nr_class - 1)) >>> 1) + " 1vs1 SVMs");
+        if (LOG.isVerbose()) {
+          // TODO: use a progress logger
+          LOG.verbose("Trained " + (p + 1) + " of " + ((nr_class * (nr_class - 1)) >>> 1) + " 1vs1 SVMs");
+        }
       }
     }
 
     // build output
-
     ClassificationModel model;
     if(probability) {
       ProbabilisticClassificationModel pmodel = new ProbabilisticClassificationModel();
@@ -124,13 +174,9 @@ public abstract class AbstractSVC extends AbstractSingleSVM {
 
     LOG.verbose("Total nSV = " + nnz);
 
-    model.l = nnz;
-    // model.SV = new ArrayList<Object>(nnz);
     model.sv_indices = new int[nnz];
-
     for(int i = 0, p = 0; i < l; i++) {
       if(nonzero[i]) {
-        // model.SV.add(x.get(perm[i]));
         model.sv_indices[p++] = perm[i];
       }
     }
@@ -169,7 +215,14 @@ public abstract class AbstractSVC extends AbstractSingleSVM {
     return model;
   }
 
-  // Stratified cross validation
+  /**
+   * Perform stratified cross validation.
+   * 
+   * @param x Data set
+   * @param weighted_C Class weights
+   * @param nr_fold Number of folds
+   * @param target Target values
+   */
   public void cross_validation(DataSet x, double[] weighted_C, int nr_fold, double[] target) {
     final int l = x.size();
 
@@ -211,7 +264,13 @@ public abstract class AbstractSVC extends AbstractSingleSVM {
     }
   }
 
-  // Platt's binary SVM Probablistic Output: an improvement from Lin et al.
+  /**
+   * Platt's binary SVM Probablistic Output: an improvement from Lin et al.
+   * 
+   * @param dec_values Decision values
+   * @param x Data set
+   * @return A and B values
+   */
   private double[] sigmoid_train(double[] dec_values, DataSet x) {
     final int l = x.size();
 
@@ -233,7 +292,7 @@ public abstract class AbstractSVC extends AbstractSingleSVM {
     double[] t = new double[l];
 
     // Initial Point and Initial Fun Value
-    double A = 0., B = FastMath.log((prior0 + 1.) / (prior1 + 1.));
+    double A = 0., B = Math.log((prior0 + 1.) / (prior1 + 1.));
     double fval = 0.;
 
     for(int i = 0; i < l; i++) {
@@ -321,7 +380,14 @@ public abstract class AbstractSVC extends AbstractSingleSVM {
     return new double[] { A, B };
   }
 
-  // Cross-validation decision values for probability estimates
+  /**
+   * Cross-validation decision values for probability estimates
+   * 
+   * @param x Data set
+   * @param Cp Positive class weight
+   * @param Cn Negative class weight
+   * @return Binary probabilities
+   */
   private double[] binary_svc_probability(DataSet x, double Cp, double Cn) {
     final int l = x.size();
     final int nr_fold = 5;

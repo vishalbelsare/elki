@@ -49,8 +49,6 @@ import elki.utilities.optionhandling.Parameterizer;
 import elki.utilities.optionhandling.parameterization.Parameterization;
 import elki.utilities.optionhandling.parameters.DoubleParameter;
 
-import net.jafama.FastMath;
-
 /**
  * Outlier detection algorithm using a mixture model approach. The data is
  * modeled as a mixture of two distributions, a Gaussian distribution for
@@ -105,8 +103,8 @@ public class GaussianUniformMixture implements OutlierAlgorithm {
    */
   public GaussianUniformMixture(double l, double c) {
     super();
-    this.logl = FastMath.log(l);
-    this.logml = FastMath.log(1 - l);
+    this.logl = Math.log(l);
+    this.logml = Math.log(1 - l);
     this.c = c;
   }
 
@@ -138,7 +136,7 @@ public class GaussianUniformMixture implements OutlierAlgorithm {
     for(int loop = 0; loop < MAX_ITER; ++loop) {
       boolean changed = false;
       for(DBIDIter iter = objids.iter(); iter.valid(); iter.advance()) {
-        // Change mask to make the current Fobject anomalous
+        // Change mask to make the current object anomalous
         boolean wasadded = anomalous.add(iter) || !anomalous.remove(iter);
         NumberVector vec = relation.get(iter);
         builder.put(vec, wasadded ? -1 : +1); // Remove
@@ -174,21 +172,22 @@ public class GaussianUniformMixture implements OutlierAlgorithm {
   }
 
   /**
-   * Loglikelihood anomalous objects. Uniform distribution.
+   * Loglikelihood of anomalous objects assuming a uniform distribution.
    *
-   * @param anomalousObjs
+   * @param anomalousObjs Anomalout objects
    * @return loglikelihood for anomalous objects
    */
   private double loglikelihoodAnomalous(DBIDs anomalousObjs) {
-    return anomalousObjs.isEmpty() ? 0 : anomalousObjs.size() * -FastMath.log(anomalousObjs.size());
+    return anomalousObjs.isEmpty() ? 0 : anomalousObjs.size() * -Math.log(anomalousObjs.size());
   }
 
   /**
    * Computes the loglikelihood of all normal objects. Gaussian model
    *
-   * @param objids Object IDs for 'normal' objects.
+   * @param objids All object ids
+   * @param anomalous Set of anomalous objects
    * @param builder Covariance matrix builder
-   * @param relation Database
+   * @param relation Data vectors
    * @return loglikelihood for normal objects
    */
   private double loglikelihoodNormal(DBIDs objids, SetDBIDs anomalous, CovarianceMatrix builder, Relation<? extends NumberVector> relation) {
@@ -196,7 +195,7 @@ public class GaussianUniformMixture implements OutlierAlgorithm {
     final LUDecomposition lu = new LUDecomposition(builder.makeSampleMatrix());
     double[][] covInv = lu.inverse();
     // for each object compute probability and sum
-    double prob = (objids.size() - anomalous.size()) * -FastMath.log(Math.sqrt(MathUtil.powi(MathUtil.TWOPI, RelationUtil.dimensionality(relation)) * lu.det()));
+    double prob = (objids.size() - anomalous.size()) * -Math.log(Math.sqrt(MathUtil.powi(MathUtil.TWOPI, RelationUtil.dimensionality(relation)) * lu.det()));
     for(DBIDIter iter = objids.iter(); iter.valid(); iter.advance()) {
       if(!anomalous.contains(iter)) {
         double[] xcent = minusEquals(relation.get(iter).toArray(), mean);

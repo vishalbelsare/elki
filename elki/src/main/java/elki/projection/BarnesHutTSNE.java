@@ -41,6 +41,7 @@ import elki.logging.statistics.LongStatistic;
 import elki.math.MathUtil;
 import elki.utilities.Priority;
 import elki.utilities.documentation.Reference;
+import elki.utilities.documentation.Title;
 import elki.utilities.exceptions.AbortException;
 import elki.utilities.io.FormatUtil;
 import elki.utilities.optionhandling.OptionID;
@@ -50,10 +51,10 @@ import elki.utilities.optionhandling.parameters.DoubleParameter;
 import elki.utilities.random.RandomFactory;
 
 /**
- * tSNE using Barnes-Hut-Approximation.
+ * t-SNE using Barnes-Hut-Approximation.
  * <p>
  * For larger data sets, use an index to make finding the nearest neighbors
- * faster, e.g. cover tree or k-d-tree.
+ * faster, e.g., cover tree or k-d-tree.
  * <p>
  * Reference:
  * <p>
@@ -68,6 +69,7 @@ import elki.utilities.random.RandomFactory;
  *
  * @param <O> Object type
  */
+@Title("t-SNE using Barnes-Hut-Approximation")
 @Reference(authors = "L. J. P. van der Maaten", //
     title = "Accelerating t-SNE using Tree-Based Algorithms", //
     booktitle = "Journal of Machine Learning Research 15", //
@@ -121,6 +123,13 @@ public class BarnesHutTSNE<O> extends TSNE<O> {
     this.sqtheta = theta * theta;
   }
 
+  /**
+   * Run the Barnes-Hut t-SNE algorithm.
+   * 
+   * @param database Database to process
+   * @param relation Data relation
+   * @return Projected data
+   */
   public Relation<DoubleVector> run(Database database, Relation<O> relation) {
     AffinityMatrix neighbors = affinity.computeAffinityMatrix(relation, EARLY_EXAGGERATION);
     double[][] solution = randomInitialSolution(neighbors.size(), dim, random.getSingleThreadedRandom());
@@ -146,6 +155,7 @@ public class BarnesHutTSNE<O> extends TSNE<O> {
    * @param pij Sparse initial affinity matrix
    * @param sol Solution output array (preinitialized)
    */
+  @Override
   protected void optimizetSNE(AffinityMatrix pij, double[][] sol) {
     final int size = pij.size();
     if(size * 3L * dim > 0x7FFF_FFFAL) {
@@ -177,6 +187,13 @@ public class BarnesHutTSNE<O> extends TSNE<O> {
     }
   }
 
+  /**
+   * Compute the gradients.
+   *
+   * @param pij affinity matrix
+   * @param solution current solution
+   * @param grad gradients
+   */
   private void computeGradient(AffinityMatrix pij, double[][] solution, double[] grad) {
     final int dim3 = 3 * dim;
     // Reset gradient / forces
@@ -200,6 +217,13 @@ public class BarnesHutTSNE<O> extends TSNE<O> {
     computeAttractiveForces(grad, pij, solution);
   }
 
+  /**
+   * Compute the attractive forces.
+   *
+   * @param attr attractive forces array
+   * @param pij affinity matrix
+   * @param sol current solution
+   */
   private void computeAttractiveForces(double[] attr, AffinityMatrix pij, double[][] sol) {
     final int dim3 = 3 * dim;
     for(int i = 0, off = 0; off < attr.length; i++, off += dim3) {

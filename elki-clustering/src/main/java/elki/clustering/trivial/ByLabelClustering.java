@@ -50,7 +50,7 @@ import elki.utilities.optionhandling.parameters.PatternParameter;
  * <p>
  * This "algorithm" puts elements into the same cluster when they agree in their
  * labels. I.e. it just uses a predefined clustering, and is mostly useful for
- * testing and evaluation (e.g. comparing the result of a real algorithm to a
+ * testing and evaluation (e.g., comparing the result of a real algorithm to a
  * reference result / golden standard).
  * <p>
  * If an assignment of an object to multiple clusters is desired, the labels of
@@ -118,6 +118,7 @@ public class ByLabelClustering implements ClusteringAlgorithm<Clustering<Model>>
    * Run the actual clustering algorithm.
    * 
    * @param relation The data input we use
+   * @return Clustering result
    */
   public Clustering<Model> run(Relation<?> relation) {
     HashMap<String, DBIDs> labelMap = multiple ? multipleAssignment(relation) : singleAssignment(relation);

@@ -72,8 +72,9 @@ import elki.utilities.optionhandling.parameters.ObjectParameter;
  * @navassoc - - - AssociationRule
  */
 @Reference(authors = "M. J. Zaki, W. Meira Jr.", //
-    title = "Data mining and analysis: fundamental concepts and algorithms", //
-    booktitle = "Cambridge University Press, 2014", //
+    title = "Itemset Mining", //
+    booktitle = "Data mining and analysis: fundamental concepts and algorithms", //
+    url = "https://dataminingbook.info/book_html/chap8/book.html", //
     bibkey = "DBLP:books/cu/ZM2014")
 public class AssociationRuleGeneration implements Algorithm {
   /**
@@ -134,6 +135,7 @@ public class AssociationRuleGeneration implements Algorithm {
    * @param database Database
    * @return Association rules
    */
+  @Override
   public AssociationRuleResult autorun(Database database) {
     // Run frequent itemset mining
     return new Instance().run(frequentItemAlgo.autorun(database));
@@ -218,7 +220,8 @@ public class AssociationRuleGeneration implements Algorithm {
       this.scratch2 = new PartialItemset(ind);
 
       // Iterate through all frequent itemsets
-      for(int i = searcher.getOffset(2), e = itemsets.size(); i < e && i >= 0; i++) {
+      for(int i = searcher.getOffset(2),
+          e = itemsets.size(); i < e && i >= 0; i++) {
         final Itemset itemset = itemsets.get(i);
         final int len = itemset.length();
         assert (len > 1);
@@ -226,7 +229,8 @@ public class AssociationRuleGeneration implements Algorithm {
           LOG.fine("Searching for rules based on: " + itemset);
         }
         // Copy itemset to scratch buffer:
-        for(int it = itemset.iter(), j = 0; itemset.iterValid(it); it = itemset.iterAdvance(it), j++) {
+        for(int it = itemset.iter(),
+            j = 0; itemset.iterValid(it); it = itemset.iterAdvance(it), j++) {
           ind[j] = itemset.iterDim(it);
         }
         scratch1.begin = 0;
@@ -241,6 +245,13 @@ public class AssociationRuleGeneration implements Algorithm {
       return result;
     }
 
+    /**
+     * Process subsets
+     *
+     * @param itemset Current itemset
+     * @param len itemset length
+     * @param cur current position
+     */
     private void processSubsets(Itemset itemset, final int len, int cur) {
       // TODO: allow cur == 0, i.e. empty head?
       while(cur >= 0 && scratch1.len > 1) {

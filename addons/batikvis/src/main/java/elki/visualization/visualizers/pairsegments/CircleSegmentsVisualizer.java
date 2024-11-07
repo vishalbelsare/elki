@@ -38,7 +38,6 @@ import elki.evaluation.clustering.pairsegments.Segment;
 import elki.evaluation.clustering.pairsegments.Segments;
 import elki.logging.Logging;
 import elki.math.MathUtil;
-import elki.result.ResultListener;
 import elki.utilities.datastructures.iterator.It;
 import elki.utilities.documentation.Reference;
 import elki.utilities.exceptions.AbortException;
@@ -131,9 +130,8 @@ public class CircleSegmentsVisualizer implements VisFactory {
    *
    * @assoc - - - Segments
    * @has - - - SegmentsStylingPolicy
-   *
    */
-  public class Instance extends AbstractVisualization implements ResultListener {
+  public static class Instance extends AbstractVisualization {
     /** Minimum width (radian) of Segment */
     private static final double SEGMENT_MIN_ANGLE = 0.01;
 
@@ -250,6 +248,11 @@ public class CircleSegmentsVisualizer implements VisFactory {
       addListeners();
     }
 
+    /**
+     * Toggle showing the unclustered pairs
+     * 
+     * @param show Show unclusered pairs
+     */
     public void toggleUnclusteredPairs(boolean show) {
       noIncrementalRedraw = true;
       showUnclusteredPairs = show;
@@ -314,6 +317,8 @@ public class CircleSegmentsVisualizer implements VisFactory {
 
     /**
      * Define and add required CSS classes
+     * 
+     * @param maxClusterSize Maximum number of clusters
      */
     protected void addCSSClasses(int maxClusterSize) {
       StyleLibrary style = context.getStyleLibrary();
@@ -478,6 +483,9 @@ public class CircleSegmentsVisualizer implements VisFactory {
       }
     }
 
+    /**
+     * Redraw the current selection
+     */
     private void redrawSelection() {
       final StyleLibrary style = context.getStyleLibrary();
       LOG.debug("Updating selection only.");
@@ -552,6 +560,11 @@ public class CircleSegmentsVisualizer implements VisFactory {
       return colorShades;
     }
 
+    /**
+     * Draw the clustering information
+     * 
+     * @return SVG element
+     */
     protected Element drawClusteringInfo() {
       Element thumbnail = SVGUtil.svgElement(svgp.getDocument(), SVGConstants.SVG_G_TAG);
 
@@ -578,6 +591,13 @@ public class CircleSegmentsVisualizer implements VisFactory {
       return thumbnail;
     }
 
+    /**
+     * Hover handling for segments.
+     * 
+     * @param segment Segment
+     * @param ringid Ring ID (depth)
+     * @param active Activate or deactivate hover
+     */
     protected void segmentHover(Segment segment, int ringid, boolean active) {
       if(active) {
         // abort if this are the unclustered pairs
@@ -628,6 +648,13 @@ public class CircleSegmentsVisualizer implements VisFactory {
       }
     }
 
+    /**
+     * Click handler for a segment.
+     * 
+     * @param segment Segment clicked
+     * @param evt Click event
+     * @param dblClick Double click?
+     */
     protected void segmentClick(Segment segment, Event evt, boolean dblClick) {
       MouseEvent mouse = (MouseEvent) evt;
 

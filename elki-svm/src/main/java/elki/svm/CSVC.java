@@ -33,12 +33,25 @@ import elki.svm.solver.Solver;
  * Regularized SVM based classification (C-SVC, C-SVM).
  */
 public class CSVC extends AbstractSVC {
+  /** Class logger */
   private static final Logging LOG = Logging.getLogger(CSVC.class);
 
-  double Cp = 1., Cn = 1.;
+  /** Weight of positives */
+  double Cp = 1.;
 
-  public CSVC(double eps, boolean shrinking, double cache_size) {
-    super(eps, shrinking, cache_size);
+  /** Weight of negatives */
+  double Cn = 1.;
+
+  /**
+   * Constructor.
+   * 
+   * @param tol Optimizer tolerance
+   * @param shrinking Use shrinking
+   * @param cache_size Cache size
+   * @param probability Estimate probabilities
+   */
+  public CSVC(double tol, boolean shrinking, double cache_size, boolean probability) {
+    super(tol, shrinking, cache_size, probability);
   }
 
   @Override
@@ -59,7 +72,7 @@ public class CSVC extends AbstractSVC {
     }
     QMatrix Q = new CachedQMatrix(l, cache_size, new SVC_Q(x, y));
     Q.initialize();
-    Solver.SolutionInfo si = new Solver().solve(l, Q, minus_ones, y, alpha, Cp, Cn, eps, shrinking);
+    Solver.SolutionInfo si = new Solver().solve(l, Q, minus_ones, y, alpha, Cp, Cn, tol, shrinking);
 
     if(Cp == Cn && LOG.isVerbose()) {
       double sum_alpha = 0;

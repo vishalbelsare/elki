@@ -37,6 +37,7 @@ import elki.distance.*;
 import elki.logging.Logging;
 import elki.logging.statistics.LongStatistic;
 import elki.utilities.documentation.Reference;
+import elki.utilities.documentation.Title;
 import elki.utilities.optionhandling.OptionID;
 import elki.utilities.optionhandling.constraints.CommonConstraints;
 import elki.utilities.optionhandling.parameterization.Parameterization;
@@ -60,6 +61,7 @@ import elki.utilities.random.RandomFactory;
  *
  * @param <O> Vector type
  */
+@Title("Spherical K-means++")
 @Reference(authors = "Y. Endo and S. Miyamoto", //
     title = "Spherical k-Means++ Clustering", //
     booktitle = "Modeling Decisions for Artificial Intelligence", //
@@ -189,7 +191,7 @@ public class SphericalKMeansPlusPlus<O> extends AbstractKMeansInitialization {
         if(weightsum < Double.MIN_NORMAL) {
           LOG.warning("Could not choose a reasonable mean - to few unique data points?");
         }
-        double r = nextDouble(weightsum);
+        double r = KMeansPlusPlus.Instance.nextDouble(random, weightsum);
         DBIDIter it = relation.iterDBIDs();
         while(it.valid()) {
           if((r -= weights.doubleValue(it)) <= 0) {
@@ -252,14 +254,6 @@ public class SphericalKMeansPlusPlus<O> extends AbstractKMeansInitialization {
         weightsum += weight;
       }
       return weightsum;
-    }
-
-    protected double nextDouble(double weightsum) {
-      double r = random.nextDouble() * weightsum;
-      while(r <= 0 && weightsum > Double.MIN_NORMAL) {
-        r = random.nextDouble() * weightsum; // Try harder to not choose 0.
-      }
-      return r;
     }
   }
 

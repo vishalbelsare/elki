@@ -86,7 +86,7 @@ public class SameSizeKMeans<V extends NumberVector> extends AbstractKMeans<V, Me
    * @param distance Distance function
    * @param k Number of neighbors
    * @param maxiter Maximum number of iterations
-   * @param initializer
+   * @param initializer K-means initialization method
    */
   public SameSizeKMeans(NumberVectorDistance<? super V> distance, int k, int maxiter, KMeansInitialization initializer) {
     super(distance, k, maxiter, initializer);
@@ -159,6 +159,14 @@ public class SameSizeKMeans<V extends NumberVector> extends AbstractKMeans<V, Me
     return metas;
   }
 
+  /**
+   * Get the initial assignment
+   * 
+   * @param clusters Clusters
+   * @param metas Meta information on points
+   * @param ids Object IDs
+   * @return Objects sorted by their loss, for transfer
+   */
   protected ArrayModifiableDBIDs initialAssignment(List<ModifiableDBIDs> clusters, final WritableDataStore<Meta> metas, DBIDs ids) {
     // Build a sorted list of objects, by descending distance delta
     ArrayModifiableDBIDs tids = DBIDUtil.newArray(ids);
@@ -360,7 +368,7 @@ public class SameSizeKMeans<V extends NumberVector> extends AbstractKMeans<V, Me
    *
    * @author Erich Schubert
    */
-  private class Meta {
+  private static class Meta {
     /**
      * Distance to the cluster centers.
      */
@@ -411,7 +419,7 @@ public class SameSizeKMeans<V extends NumberVector> extends AbstractKMeans<V, Me
    *
    * @author Erich Schubert
    */
-  public class PreferenceComparator implements IntComparator {
+  public static class PreferenceComparator implements IntComparator {
     /**
      * Meta to use for comparison.
      */

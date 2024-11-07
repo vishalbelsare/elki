@@ -119,7 +119,9 @@ public class PROCLUS extends AbstractProjectedClustering<Clustering<SubspaceMode
   /**
    * Performs the PROCLUS algorithm on the given database.
    *
+   * @param <V> Vector type
    * @param relation Relation to process
+   * @return Clustering result
    */
   public <V extends NumberVector> Clustering<SubspaceModel> run(Relation<V> relation) {
     if(RelationUtil.dimensionality(relation) < l) {
@@ -320,6 +322,7 @@ public class PROCLUS extends AbstractProjectedClustering<Clustering<SubspaceMode
    *
    * @param medoids the ids of the medoids
    * @param distance the distance function
+   * @param rangeQuery range query
    * @return a mapping of the medoid's id to its locality
    */
   private DataStore<DBIDs> getLocalities(DBIDs medoids, DistanceQuery<? extends NumberVector> distance, RangeSearcher<DBIDRef> rangeQuery) {
@@ -354,6 +357,7 @@ public class PROCLUS extends AbstractProjectedClustering<Clustering<SubspaceMode
    * @param medoids the set of medoids
    * @param relation the relation containing the objects
    * @param distance the distance function
+   * @param rangeQuery range query
    * @return the set of correlated dimensions for each medoid in the specified
    *         medoid set
    */
@@ -702,10 +706,22 @@ public class PROCLUS extends AbstractProjectedClustering<Clustering<SubspaceMode
    * @author Erich Schubert
    */
   private static class DoubleIntInt implements Comparable<DoubleIntInt> {
+    /** Double value for sorting */
     protected double first;
 
-    protected int dimi, dimj;
+    /** First dimension */
+    protected int dimi;
 
+    /** Second dimension */
+    protected int dimj;
+
+    /**
+     * Constructor
+     * 
+     * @param first Double value
+     * @param second Integer dimension
+     * @param third Integer dimension
+     */
     public DoubleIntInt(double first, int second, int third) {
       this.first = first;
       this.dimi = second;

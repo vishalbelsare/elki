@@ -1,15 +1,36 @@
 # ELKI
 ##### Environment for Developing KDD-Applications Supported by Index-Structures
-[![arXiv:1902-03616](https://img.shields.io/badge/arXiv-1902.03616-brightgreen)](https://arxiv.org/abs/1902.03616)
-[![DBLP:journals/corr/abs-1902-03616](https://img.shields.io/badge/DBLP--BibTeX-journals%2Fcorr%2Fabs--1902--03616-brightgreen)](https://dblp.org/rec/html/journals/corr/abs-1902-03616)
-[![License AGPL-3.0](https://img.shields.io/badge/License-AGPL--3-brightgreen.svg)](https://elki-project.github.io/license)
-[![Build Status](https://travis-ci.org/elki-project/elki.svg?branch=master)](https://travis-ci.org/elki-project/elki)
+[![Unit tests](https://github.com/elki-project/elki/actions/workflows/gradle-build.yml/badge.svg)](https://github.com/elki-project/elki/actions/workflows/gradle-build.yml)
+[![License AGPL-3.0](https://img.shields.io/badge/License-AGPL--3-34D058.svg?labelColor=444D56)](https://elki-project.github.io/license)
+[![DBLP:conf/sisap/Schubert22](https://img.shields.io/badge/Cite%20as%3A-DBLP%3Aconf%2Fsisap%2FSchubert22-34D058?labelColor=444D56)](https://dblp.org/rec/conf/sisap/Schubert22.html?view=bibtex)
 
 ## Quick Summary
 ELKI is an open source (AGPLv3) data mining software written in Java. The focus of ELKI is research in algorithms, with an emphasis on unsupervised methods in cluster analysis and outlier detection.
 In order to achieve high performance and scalability, ELKI offers many data index structures such as the R*-tree that can provide major performance gains.
 ELKI is designed to be easy to extend for researchers and students in this domain, and welcomes contributions in particular of new methods.
 ELKI aims at providing a large collection of highly parameterizable algorithms, in order to allow easy and fair evaluation and benchmarking of algorithms. 
+
+## Download
+
+You can [download](https://elki-project.github.io/releases/) precompiled ELKI releases from the home page,
+or you can use standard Java dependency management such as Gradle and Maven.
+
+Gradle:
+```groovy
+dependencies {
+    compile group: 'io.github.elki-project', name: 'elki', version:'0.8.0'
+}
+```
+
+Maven:
+```xml
+<!-- https://mvnrepository.com/artifact/io.github.elki-project/elki -->
+<dependency>
+    <groupId>io.github.elki-project</groupId>
+    <artifactId>elki</artifactId>
+    <version>0.8.0</version>
+</dependency>
+```
 
 ## Background
 
@@ -55,10 +76,6 @@ We discourage cross-platform benchmarking, because it is easy to produce mislead
 You can [browse the open bug reports](https://github.com/elki-project/elki/issues) or [create a new bug report](https://github.com/elki-project/elki/issues/new).
 
 We also appreciate any comments, suggestions and code contributions.<br/> You can contact the core development team by e-mail: `elki () dbs ifi lmu de`
-
-You can also [subscribe to the user mailing list](https://lists.ifi.lmu.de/mailman/listinfo/elki-user) of ELKI, to exchange questions and ideas among other users or to get announcements (e.g., new releases, major changes) by the ELKI team.
-
-Our primary "support" medium is this *community* mailing list. We appreciate if you share experiences and also success stories there that might help other users. This project makes a lot of progress, and information can get outdated rather quickly. If you prefer a web forum, you can *try* asking at [StackOverflow](http://www.stackoverflow.com/), but you should understand that this is a general (and third-party operated) programming community.
 
 ## Design Goals
 

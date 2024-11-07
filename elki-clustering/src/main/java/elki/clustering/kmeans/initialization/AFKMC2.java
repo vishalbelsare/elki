@@ -27,6 +27,7 @@ import elki.database.relation.Relation;
 import elki.distance.NumberVectorDistance;
 import elki.logging.Logging;
 import elki.utilities.documentation.Reference;
+import elki.utilities.documentation.Title;
 import elki.utilities.random.RandomFactory;
 
 /**
@@ -42,6 +43,7 @@ import elki.utilities.random.RandomFactory;
  * @author Erich Schubert
  * @since 0.8.0
  */
+@Title("AFK-MC²")
 @Reference(authors = "O. Bachem, M. Lucic, S. H. Hassani, A. Krause", //
     title = "Fast and Provably Good Seedings for k-Means", //
     booktitle = "Neural Information Processing Systems 2016", //
@@ -116,11 +118,7 @@ public class AFKMC2 extends KMC2 {
       }
     }
 
-    /**
-     * Class logger.
-     * 
-     * @return Logger
-     */
+    @Override
     protected Logging getLogger() {
       return LOG;
     }

@@ -21,13 +21,19 @@
 package elki.clustering.kmedoids;
 
 import elki.clustering.kmedoids.initialization.KMedoidsInitialization;
+import elki.data.Clustering;
+import elki.data.model.MedoidModel;
+import elki.database.datastore.DataStoreFactory;
+import elki.database.datastore.DataStoreUtil;
 import elki.database.datastore.WritableIntegerDataStore;
 import elki.database.ids.*;
 import elki.database.query.distance.DistanceQuery;
+import elki.database.relation.Relation;
 import elki.distance.Distance;
 import elki.logging.Logging;
 import elki.logging.progress.IndefiniteProgress;
 import elki.logging.statistics.DoubleStatistic;
+import elki.logging.statistics.Duration;
 import elki.logging.statistics.LongStatistic;
 import elki.math.linearalgebra.VMath;
 import elki.utilities.documentation.Reference;
@@ -44,7 +50,7 @@ import elki.utilities.documentation.Reference;
  * Erich Schubert and Peter J. Rousseeuw<br>
  * Fast and Eager k-Medoids Clustering: O(k) Runtime Improvement of the PAM,
  * CLARA, and CLARANS Algorithms<br>
- * Preprint
+ * Information Systems 101
  *
  * @author Erich Schubert
  * @since 0.8.0
@@ -56,9 +62,9 @@ import elki.utilities.documentation.Reference;
  */
 @Reference(authors = "Erich Schubert and Peter J. Rousseeuw", //
     title = "Fast and Eager k-Medoids Clustering: O(k) Runtime Improvement of the PAM, CLARA, and CLARANS Algorithms", //
-    booktitle = "arXiv preprint", //
-    url = "https://arxiv.org/abs/2008.05171", //
-    bibkey = "DBLP:journals/corr/abs-2008-05171")
+    booktitle = "Information Systems 101", //
+    url = "https://doi.org/10.1016/j.is.2021.101804", //
+    bibkey = "DBLP:journals/is/SchubertR21")
 public class FasterPAM<O> extends FastPAM<O> {
   /**
    * The logger for this class.
@@ -82,22 +88,20 @@ public class FasterPAM<O> extends FastPAM<O> {
     super(distance, k, maxiter, initializer);
   }
 
-  /**
-   * Run the main algorithm. Internal use, for easier subclassing, this
-   * primarily is a wrapper around "new Instance" for subclasses.
-   * 
-   * @param distQ Distance query
-   * @param ids IDs to process
-   * @param medoids Current medoids
-   * @param assignment Cluster assignment output
-   */
-  protected void run(DistanceQuery<? super O> distQ, DBIDs ids, ArrayModifiableDBIDs medoids, WritableIntegerDataStore assignment) {
+  @Override
+  public Clustering<MedoidModel> run(Relation<O> relation, int k, DistanceQuery<? super O> distQ) {
+    DBIDs ids = relation.getDBIDs();
+    ArrayModifiableDBIDs medoids = initialMedoids(distQ, ids, k);
+    WritableIntegerDataStore assignment = DataStoreUtil.makeIntegerStorage(ids, DataStoreFactory.HINT_HOT | DataStoreFactory.HINT_TEMP, -1);
+    Duration optd = getLogger().newDuration(getClass().getName() + ".optimization-time").begin();
     new Instance(distQ, ids, assignment).run(medoids, maxiter);
+    getLogger().statistics(optd.end());
+    return wrapResult(ids, assignment, medoids, "FasterPAM Clustering");
   }
 
   /**
    * Instance for a single dataset.
-   *
+   * <p>
    * Note: we experimented with not caching the distance to nearest and second
    * nearest, but only the assignments. The matrix lookup was more expensive, so
    * this is probably worth the 2*n doubles in storage.
@@ -120,9 +124,10 @@ public class FasterPAM<O> extends FastPAM<O> {
      * Run the PAM optimization phase.
      *
      * @param medoids Medoids list
-     * @param maxiter
+     * @param maxiter Maximum number of iterations
      * @return final cost
      */
+    @Override
     protected double run(ArrayModifiableDBIDs medoids, int maxiter) {
       final int k = medoids.size();
       // Initial assignment to nearest medoids
@@ -200,9 +205,7 @@ public class FasterPAM<O> extends FastPAM<O> {
     }
   }
 
-  /**
-   * Get the static class logger.
-   */
+  @Override
   protected Logging getLogger() {
     return LOG;
   }

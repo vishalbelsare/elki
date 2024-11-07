@@ -31,8 +31,6 @@ import elki.utilities.optionhandling.parameters.DoubleParameter;
 import elki.utilities.optionhandling.parameters.RandomParameter;
 import elki.utilities.random.RandomFactory;
 
-import net.jafama.FastMath;
-
 /**
  * Halton sequences are a pseudo-uniform distribution. The data is actually too
  * regular for a true uniform distribution, but as such will of course often
@@ -52,7 +50,7 @@ import net.jafama.FastMath;
  * <p>
  * <b>Important note: this code hasn't been double checked yet. While it
  * probably works for some simple cases such as example data set generation, do
- * <em>not</em> rely on it for e.g. quasi monte carlo methods without
+ * <em>not</em> rely on it for, e.g., quasi monte carlo methods without
  * double-checking the quality, and looking at more advanced methods!</b>
  * <p>
  * Let me repeat this: this code was written <b>to generate toy datasets</b>. It
@@ -155,7 +153,7 @@ public class HaltonUniformDistribution implements Distribution {
 
     this.base = (short) base;
     this.invbase = 1.0 / base;
-    this.logbase = FastMath.log(base);
+    this.logbase = Math.log(base);
     // 32 bit * log(2) / log(base)
     this.maxi = (int) (32.0 * MathUtil.LOG2 / logbase);
     this.current = seed;
@@ -196,7 +194,7 @@ public class HaltonUniformDistribution implements Distribution {
   public double logpdf(double val) {
     return !(val >= min) || val > max ? //
         (val == val ? Double.NEGATIVE_INFINITY : Double.NaN) //
-        : len > 0. ? FastMath.log(1.0 / len) : Double.POSITIVE_INFINITY;
+        : len > 0. ? Math.log(1.0 / len) : Double.POSITIVE_INFINITY;
   }
 
   @Override

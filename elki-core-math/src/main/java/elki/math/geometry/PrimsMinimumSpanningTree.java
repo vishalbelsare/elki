@@ -65,6 +65,7 @@ public class PrimsMinimumSpanningTree {
   /**
    * Run Prim's algorithm on a dense graph.
    * 
+   * @param <T> Data type
    * @param data Data set
    * @param adapter Adapter instance
    * @return list of node number pairs representing the edges
@@ -124,6 +125,7 @@ public class PrimsMinimumSpanningTree {
   /**
    * Run Prim's algorithm on a dense graph.
    * 
+   * @param <T> Data type
    * @param data Data set
    * @param adapter Adapter instance
    * @param collector Edge collector
@@ -232,6 +234,7 @@ public class PrimsMinimumSpanningTree {
     /**
      * Get number of objects in dataset
      * 
+     * @param data Data set
      * @return Size
      */
     int size(T data);

@@ -277,8 +277,8 @@ public class ELKIServiceRegistry {
       return findAllImplementations(restrictionClass);
     }
     // This codepath is used by utility classes to also find buggy
-    // implementations (e.g. non-instantiable, abstract) of the interfaces.
-    List<Class<?>> known = findAllImplementations(restrictionClass);
+    // implementations (e.g., non-instantiable, abstract) of the interfaces.
+    List<Class<?>> known = new ArrayList<>(findAllImplementations(restrictionClass));
     // For quickly skipping seen entries:
     HashSet<Class<?>> dupes = new HashSet<>(known);
     for(Iterator<Class<?>> iter = ELKIServiceScanner.nonindexedClasses(); iter.hasNext();) {
@@ -300,7 +300,8 @@ public class ELKIServiceRegistry {
    * relative class name or alias name.
    *
    * @param restrictionClass Restriction class
-   * @param value Class name, relative class name, or nickname.
+   * @param value Class name, relative class name, or nickname
+   * @param <C> Restriction class
    * @return Class found or {@code null}
    */
   @SuppressWarnings("unchecked")
@@ -342,7 +343,7 @@ public class ELKIServiceRegistry {
     }
 
     if(!restrictionClass.isAssignableFrom(clazz)) {
-      LOG.warning("Invalid entry in service file for class " + restrictionClass.getName() + ": " + value);
+      LOG.warning("Cannot load " + value + " as it does not implement " + restrictionClass.getName());
       clazz = FAILED_LOAD;
     }
     if(e != null) {

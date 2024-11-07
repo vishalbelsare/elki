@@ -54,6 +54,11 @@ import elki.utilities.datastructures.iterator.It;
  * @since 0.7.5
  */
 public class GeoIndexing {
+  /**
+   * Main method.
+   *
+   * @param args Command line arguments
+   */
   public static void main(String[] args) {
     // Set the logging level to statistics:
     LoggingConfiguration.setStatistics();
@@ -105,7 +110,7 @@ public class GeoIndexing {
     System.out.println("Close to New York:");
     for(DoubleDBIDListIter it = knns.iter(); it.valid(); it.advance()) {
       double km = it.doubleValue() / 1000; // To kilometers
-      System.out.println(rel.get(it) + " distance: " + km + " km row: " + ids.getOffset(it));
+      System.out.println(rel.get(it) + " distance: " + km + " km row: " + ids.index(it));
     }
 
     // Many other indexes will fail if we search close to the date line.
@@ -115,7 +120,7 @@ public class GeoIndexing {
     System.out.println("Close to Tuvalu:");
     for(DoubleDBIDListIter it = knns.iter(); it.valid(); it.advance()) {
       double km = it.doubleValue() / 1000; // To kilometers
-      System.out.println(rel.get(it) + " distance: " + km + " km row: " + ids.getOffset(it));
+      System.out.println(rel.get(it) + " distance: " + km + " km row: " + ids.index(it));
     }
     // Note that the ELKI index does find points both at longitude +179 and -179
 

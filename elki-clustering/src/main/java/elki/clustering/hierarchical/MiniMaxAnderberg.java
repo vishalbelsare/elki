@@ -38,8 +38,6 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  * <p>
  * This optimization is attributed to M. R. Anderberg.
  * <p>
- * This particular implementation is based on Anderberg
- * <p>
  * Reference:
  * <p>
  * M. R. Anderberg<br>
@@ -79,6 +77,7 @@ public class MiniMaxAnderberg<O> extends MiniMax<O> {
    * @param relation Relation
    * @return Clustering hierarchy
    */
+  @Override
   public ClusterPrototypeMergeHistory run(Relation<O> relation) {
     DistanceQuery<O> dq = new QueryBuilder<>(relation, distance).precomputed().distanceQuery();
     final ArrayDBIDs ids = DBIDUtil.ensureArray(relation.getDBIDs());
@@ -129,11 +128,7 @@ public class MiniMaxAnderberg<O> extends MiniMax<O> {
       return (ClusterPrototypeMergeHistory) builder.complete();
     }
 
-    /**
-     * Perform the next merge step.
-     * 
-     * @return x, for shrinking the active set.
-     */
+    @Override
     protected int findMerge() {
       double mindist = Double.POSITIVE_INFINITY;
       int x = -1, y = -1;
@@ -155,12 +150,7 @@ public class MiniMaxAnderberg<O> extends MiniMax<O> {
       return x;
     }
 
-    /**
-     * Execute the cluster merge
-     * 
-     * @param x first cluster to merge, with {@code x > y}
-     * @param y second cluster to merge, with {@code y < x}
-     */
+    @Override
     protected void merge(int x, int y) {
       assert x >= 0 && y >= 0;
       assert y < x;

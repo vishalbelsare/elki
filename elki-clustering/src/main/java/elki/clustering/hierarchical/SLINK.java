@@ -105,6 +105,7 @@ public class SLINK<O> implements HierarchicalClusteringAlgorithm {
    * Performs the SLINK algorithm on the given database.
    *
    * @param relation Data relation to use
+   * @return cluster merge history
    */
   public ClusterMergeHistory run(Relation<O> relation) {
     final Logging log = getLogger(); // To allow CLINK logger override
@@ -164,28 +165,13 @@ public class SLINK<O> implements HierarchicalClusteringAlgorithm {
   protected static ClusterMergeHistoryBuilder convertOutput(ClusterMergeHistoryBuilder builder, ArrayDBIDs oids, DBIDDataStore pi, DoubleDataStore lambda) {
     ArrayModifiableDBIDs ids = DBIDUtil.newArray(oids);
     ids.sort(new DataStoreUtil.AscendingByDoubleDataStoreAndId(lambda));
+    DBIDEnum range = DBIDUtil.ensureEnum(oids);
     DBIDVar p = DBIDUtil.newVar();
-    if(oids instanceof DBIDRange) { // simple case, can use offsets
-      DBIDRange range = (DBIDRange) oids;
-      for(DBIDIter it = ids.iter(); it.valid(); it.advance()) {
-        double d = lambda.doubleValue(it);
-        if(!DBIDUtil.equal(it, pi.assignVar(it, p))) {
-          builder.add(range.getOffset(it), d, range.getOffset(p));
-        }
+    for(DBIDIter it = ids.iter(); it.valid(); it.advance()) {
+      double d = lambda.doubleValue(it);
+      if(!DBIDUtil.equal(it, pi.assignVar(it, p))) {
+        builder.add(range.index(it), d, range.index(p));
       }
-    }
-    else { // need an index to map back to integer offsets
-      WritableIntegerDataStore idx = DataStoreFactory.FACTORY.makeIntegerStorage(oids, DataStoreFactory.HINT_HOT | DataStoreFactory.HINT_TEMP);
-      for(DBIDArrayIter it = oids.iter(); it.valid(); it.advance()) {
-        idx.putInt(it, it.getOffset());
-      }
-      for(DBIDIter it = ids.iter(); it.valid(); it.advance()) {
-        double d = lambda.doubleValue(it);
-        if(!DBIDUtil.equal(it, pi.assignVar(it, p))) {
-          builder.add(idx.intValue(it), d, idx.intValue(p));
-        }
-      }
-      idx.destroy();
     }
     return builder;
   }
@@ -312,7 +298,7 @@ public class SLINK<O> implements HierarchicalClusteringAlgorithm {
   }
 
   /**
-   * Get the (static) class logger.
+   * @return The (static) class logger.
    */
   protected Logging getLogger() {
     return LOG;

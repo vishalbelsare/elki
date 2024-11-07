@@ -81,8 +81,8 @@ import net.jafama.FastMath;
  * <p>
  * Since some algorithms can be too slow to run on large data sets and for large
  * values of k, they can be disabled. For example
- * <tt>-disable '(LDOF|DWOF|COF|FastABOD)'</tt> disables these two methods
- * completely. Alternatively, you can use the parameter <tt>-ksquaremax</tt>
+ * <code>-disable '(LDOF|DWOF|COF|FastABOD)'</code> disables these two methods
+ * completely. Alternatively, you can use the parameter <code>-ksquaremax</code>
  * to control the maximum k for these four methods separately.
  * <p>
  * For methods where k=1 does not make sense, this value will be skipped, and
@@ -359,7 +359,7 @@ public class ComputeKNNOutlierScores<O extends NumberVector> extends AbstractDis
       return; // Disabled
     }
     LOG.verbose("Running " + prefix);
-    final int digits = (int) FastMath.ceil(FastMath.log10(krange.getMax() + 1));
+    final int digits = (int) Math.ceil(FastMath.log10(krange.getMax() + 1));
     final String format = "%s-%0" + digits + "d";
     try {
       krange.forEach(k -> {

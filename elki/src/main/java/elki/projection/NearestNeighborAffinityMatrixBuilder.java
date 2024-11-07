@@ -2,7 +2,7 @@
  * This file is part of ELKI:
  * Environment for Developing KDD-Applications Supported by Index-Structures
  *
- * Copyright (C) 2022
+ * Copyright (C) 2024
  * ELKI Development Team
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,7 +35,6 @@ import elki.math.MeanVariance;
 import elki.utilities.datastructures.arraylike.DoubleArray;
 import elki.utilities.datastructures.arraylike.IntegerArray;
 import elki.utilities.documentation.Reference;
-import elki.utilities.exceptions.AbortException;
 
 import net.jafama.FastMath;
 
@@ -80,7 +79,7 @@ public class NearestNeighborAffinityMatrixBuilder<O> extends PerplexityAffinityM
    */
   public NearestNeighborAffinityMatrixBuilder(Distance<? super O> distance, double perplexity) {
     super(distance, perplexity);
-    this.numberOfNeighbours = (int) FastMath.ceil(3 * perplexity);
+    this.numberOfNeighbours = (int) Math.ceil(3 * perplexity);
   }
 
   /**
@@ -101,10 +100,7 @@ public class NearestNeighborAffinityMatrixBuilder<O> extends PerplexityAffinityM
     if(knnq instanceof LinearScanQuery && numberOfNeighbours * numberOfNeighbours < relation.size()) {
       LOG.warning("To accelerate Barnes-Hut tSNE, please use an index.");
     }
-    if(!(relation.getDBIDs() instanceof DBIDRange)) {
-      throw new AbortException("Distance matrixes are currently only supported for DBID ranges (as used by static databases) for performance reasons (Patches welcome).");
-    }
-    DBIDRange rids = (DBIDRange) relation.getDBIDs();
+    DBIDEnum rids = DBIDUtil.ensureEnum(relation.getDBIDs());
     final int size = rids.size();
     // Sparse affinity graph
     double[][] pij = new double[size][];
@@ -126,9 +122,9 @@ public class NearestNeighborAffinityMatrixBuilder<O> extends PerplexityAffinityM
    * @param indices Output of indexes
    * @param initialScale Initial scaling factor
    */
-  protected void computePij(DBIDRange ids, KNNSearcher<DBIDRef> knnq, boolean square, int numberOfNeighbours, double[][] pij, int[][] indices, double initialScale) {
+  protected void computePij(DBIDEnum ids, KNNSearcher<DBIDRef> knnq, boolean square, int numberOfNeighbours, double[][] pij, int[][] indices, double initialScale) {
     Duration timer = LOG.newDuration(this.getClass().getName() + ".runtime.neighborspijmatrix").begin();
-    final double logPerp = FastMath.log(perplexity);
+    final double logPerp = Math.log(perplexity);
     // Scratch arrays, resizable
     DoubleArray dists = new DoubleArray(numberOfNeighbours + 10);
     IntegerArray inds = new IntegerArray(numberOfNeighbours + 10);
@@ -190,7 +186,7 @@ public class NearestNeighborAffinityMatrixBuilder<O> extends PerplexityAffinityM
    * Load a neighbor query result into a double and and integer array, also
    * removing the query point. This is necessary, because we have to modify the
    * distances.
-   * 
+   * <p>
    * TODO: sort by index, not distance
    *
    * @param ids Indexes
@@ -200,14 +196,14 @@ public class NearestNeighborAffinityMatrixBuilder<O> extends PerplexityAffinityM
    * @param dist Output distance array
    * @param ind Output index array
    */
-  protected void convertNeighbors(DBIDRange ids, DBIDRef ix, boolean square, KNNList neighbours, DoubleArray dist, IntegerArray ind) {
+  protected void convertNeighbors(DBIDEnum ids, DBIDRef ix, boolean square, KNNList neighbours, DoubleArray dist, IntegerArray ind) {
     for(DoubleDBIDListIter iter = neighbours.iter(); iter.valid(); iter.advance()) {
       if(DBIDUtil.equal(iter, ix)) {
         continue; // Skip query point
       }
       double d = iter.doubleValue();
       dist.add(square ? (d * d) : d);
-      ind.add(ids.getOffset(iter));
+      ind.add(ids.index(iter));
     }
   }
 
@@ -223,7 +219,7 @@ public class NearestNeighborAffinityMatrixBuilder<O> extends PerplexityAffinityM
    * @return beta
    */
   protected static double computeSigma(int i, DoubleArray pij_row, double perplexity, double log_perp, double[] pij_i) {
-    double max = pij_row.get((int) FastMath.ceil(perplexity)) / Math.E;
+    double max = pij_row.get((int) Math.ceil(perplexity)) / Math.E;
     double beta = 1 / max; // beta = 1. / (2*sigma*sigma)
     double diff = computeH(pij_row, pij_i, -beta) - log_perp;
     double betaMin = 0.;
@@ -267,7 +263,7 @@ public class NearestNeighborAffinityMatrixBuilder<O> extends PerplexityAffinityM
     for(int j = 0; j < len; j++) {
       sum += dist_i.get(j) * (pij_row[j] *= s);
     }
-    return FastMath.log(sumP) - mbeta * sum;
+    return Math.log(sumP) - mbeta * sum;
   }
 
   /**

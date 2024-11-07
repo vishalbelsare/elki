@@ -21,29 +21,21 @@
 package elki.index.tree.metrical.mtreevariants.mktrees.mkapp;
 
 import java.util.List;
-import java.util.Map;
 
-import elki.database.ids.ArrayModifiableDBIDs;
-import elki.database.ids.DBID;
-import elki.database.ids.DBIDIter;
-import elki.database.ids.DBIDRef;
-import elki.database.ids.DBIDUtil;
-import elki.database.ids.DBIDs;
-import elki.database.ids.DoubleDBIDList;
-import elki.database.ids.DoubleDBIDListIter;
-import elki.database.ids.KNNList;
-import elki.database.ids.ModifiableDBIDs;
-import elki.database.ids.ModifiableDoubleDBIDList;
+import elki.database.datastore.DataStore;
+import elki.database.ids.*;
 import elki.database.relation.Relation;
 import elki.index.tree.LeafEntry;
 import elki.index.tree.metrical.mtreevariants.mktrees.AbstractMkTree;
 import elki.index.tree.metrical.mtreevariants.query.MTreeSearchCandidate;
 import elki.logging.Logging;
+import elki.math.linearalgebra.VMath;
 import elki.math.statistics.PolynomialRegression;
 import elki.persistent.PageFile;
 import elki.utilities.datastructures.heap.Heap;
 import elki.utilities.datastructures.heap.UpdatableHeap;
 import elki.utilities.io.ByteArrayUtil;
+
 import net.jafama.FastMath;
 
 /**
@@ -119,7 +111,7 @@ public abstract class MkAppTree<O> extends AbstractMkTree<O, MkAppTreeNode<O>, M
       super.insert(entry, false);
     }
 
-    Map<DBID, KNNList> knnLists = batchNN(getNode(getRootID()), ids, settings.kmax + 1);
+    DataStore<KNNList> knnLists = batchNN(getNode(getRootID()), ids, settings.kmax + 1);
 
     adjustApproximatedKNNDistances(getRootEntry(), knnLists);
     doExtraIntegrityChecks();
@@ -238,22 +230,23 @@ public abstract class MkAppTree<O> extends AbstractMkTree<O, MkAppTreeNode<O>, M
     }
   }
 
-  private double[] getMeanKNNList(DBIDs ids, Map<DBID, KNNList> knnLists) {
+  /**
+   * Get the mean kNN values.
+   * 
+   * @param ids Object ids
+   * @param knnLists kNN lists
+   * @return Mean kNN values
+   */
+  private double[] getMeanKNNList(DBIDs ids, DataStore<KNNList> knnLists) {
     double[] means = new double[settings.kmax];
     for(DBIDIter iter = ids.iter(); iter.valid(); iter.advance()) {
-      DBID id = DBIDUtil.deref(iter);
-      KNNList knns = knnLists.get(id);
+      KNNList knns = knnLists.get(iter);
       int k = 0;
       for(DoubleDBIDListIter it = knns.iter(); k < settings.kmax && it.valid(); it.advance(), k++) {
         means[k] += it.doubleValue();
       }
     }
-
-    for(int k = 0; k < settings.kmax; k++) {
-      means[k] /= ids.size();
-    }
-
-    return means;
+    return VMath.timesEquals(means, 1./ ids.size());
   }
 
   /**
@@ -262,7 +255,7 @@ public abstract class MkAppTree<O> extends AbstractMkTree<O, MkAppTreeNode<O>, M
    * @param entry the root entry of the current subtree
    * @param knnLists a map of knn lists for each leaf entry
    */
-  private void adjustApproximatedKNNDistances(MkAppEntry entry, Map<DBID, KNNList> knnLists) {
+  private void adjustApproximatedKNNDistances(MkAppEntry entry, DataStore<KNNList> knnLists) {
     MkAppTreeNode<O> node = getNode(entry);
 
     if(node.isLeaf()) {
@@ -338,8 +331,8 @@ public abstract class MkAppTree<O> extends AbstractMkTree<O, MkAppTreeNode<O>, M
 
     for(int k = 0; k < settings.kmax - k_0; k++) {
       if(settings.log) {
-        x[k] = FastMath.log(k + k_0);
-        y[k] = FastMath.log(knnDistances[k + k_0]);
+        x[k] = Math.log(k + k_0);
+        y[k] = Math.log(knnDistances[k + k_0]);
       }
       else {
         x[k] = k + k_0;

@@ -199,7 +199,7 @@ public final class FormatUtil {
    * Formats the double array d with the specified separator.
    *
    * @param d the double array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @return a String representing the double array d
    */
   public static String format(double[] d, String sep) {
@@ -222,7 +222,7 @@ public final class FormatUtil {
    * Formats the double array d with the specified number format.
    *
    * @param d the double array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @param nf the number format to be used for formatting
    * @return a String representing the double array d
    */
@@ -234,6 +234,7 @@ public final class FormatUtil {
   /**
    * Returns a string representation of this vector.
    *
+   * @param v vector
    * @param w column width
    * @param d number of digits after the decimal
    * @return a string representation of this matrix
@@ -262,7 +263,7 @@ public final class FormatUtil {
    *
    * @param buf String builder to append to
    * @param d the double array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @return Output buffer buf
    */
   public static StringBuilder formatTo(StringBuilder buf, double[] d, String sep) {
@@ -284,7 +285,7 @@ public final class FormatUtil {
    *
    * @param buf String builder to append to
    * @param d the double array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @param nf the number format to be used for formatting
    * @return Output buffer buf
    */
@@ -307,7 +308,7 @@ public final class FormatUtil {
    *
    * @param buf String builder to append to
    * @param d the float array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @return Output buffer buf
    */
   public static StringBuilder formatTo(StringBuilder buf, float[] d, String sep) {
@@ -329,7 +330,7 @@ public final class FormatUtil {
    *
    * @param buf String builder to append to
    * @param d the float array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @param nf the number format to be used for formatting
    * @return Output buffer buf
    */
@@ -352,7 +353,7 @@ public final class FormatUtil {
    *
    * @param buf String builder to append to
    * @param d the int array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @return Output buffer buf
    */
   public static StringBuilder formatTo(StringBuilder buf, int[] d, String sep) {
@@ -374,7 +375,7 @@ public final class FormatUtil {
    *
    * @param buf String builder to append to
    * @param d the long array to be formatted
-   * @param sep separator between the single values of the long array, e.g. ','
+   * @param sep separator between the single values of the long array, e.g., ','
    * @return Output buffer buf
    */
   public static StringBuilder formatTo(StringBuilder buf, long[] d, String sep) {
@@ -396,7 +397,7 @@ public final class FormatUtil {
    *
    * @param buf String builder to append to
    * @param d the int array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @return Output buffer buf
    */
   public static StringBuilder formatTo(StringBuilder buf, short[] d, String sep) {
@@ -418,7 +419,7 @@ public final class FormatUtil {
    *
    * @param buf String builder to append to
    * @param d the byte array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @return Output buffer buf
    */
   public static StringBuilder formatTo(StringBuilder buf, byte[] d, String sep) {
@@ -440,7 +441,7 @@ public final class FormatUtil {
    *
    * @param buf String builder to append to
    * @param d the boolean array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @return Output buffer buf
    */
   public static StringBuilder formatTo(StringBuilder buf, boolean[] d, String sep) {
@@ -483,7 +484,7 @@ public final class FormatUtil {
    * Formats the float array d with the specified number format.
    *
    * @param d the float array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @param nf the number format to be used for formatting
    * @return a String representing the double array d
    */
@@ -496,7 +497,7 @@ public final class FormatUtil {
    * Formats the float array d with the specified number format.
    *
    * @param d the float array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @return a String representing the double array d
    */
   public static String format(float[] d, String sep) {
@@ -519,7 +520,7 @@ public final class FormatUtil {
    * Formats the int array a for printing purposes.
    * 
    * @param a the int array to be formatted
-   * @param sep the separator between the single values of the array, e.g. ','
+   * @param sep the separator between the single values of the array, e.g., ','
    * @return a String representing the int array a
    */
   public static String format(int[] a, String sep) {
@@ -564,7 +565,7 @@ public final class FormatUtil {
    * Formats the boolean array b with ',' as separator.
    *
    * @param b the boolean array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @return a String representing the boolean array b
    */
   public static String format(boolean[] b, final String sep) {
@@ -588,9 +589,9 @@ public final class FormatUtil {
    *
    * @param buf Output buffer
    * @param d the double array to be formatted
-   * @param pre Row prefix (e.g. " [")
-   * @param pos Row postfix (e.g. "]\n")
-   * @param csep Separator for columns (e.g. ", ")
+   * @param pre Row prefix (e.g., " [")
+   * @param pos Row postfix (e.g., "]\n")
+   * @param csep Separator for columns (e.g., ", ")
    * @param nf the number format to use
    * @return Output buffer buf
    */
@@ -623,9 +624,9 @@ public final class FormatUtil {
    * fraction digits.
    *
    * @param d the double matrix to be formatted
-   * @param pre Row prefix (e.g. " [")
-   * @param pos Row postfix (e.g. "]\n")
-   * @param csep Separator for columns (e.g. ", ")
+   * @param pre Row prefix (e.g., " [")
+   * @param pos Row postfix (e.g., "]\n")
+   * @param csep Separator for columns (e.g., ", ")
    * @param nf the number format to use
    * @return a String representing the double array d
    */
@@ -637,11 +638,12 @@ public final class FormatUtil {
   /**
    * Returns a string representation of this matrix.
    *
+   * @param m Matrix
    * @param w column width
    * @param d number of digits after the decimal
-   * @param pre Row prefix (e.g. " [")
-   * @param pos Row postfix (e.g. "]\n")
-   * @param csep Column separator (e.g. ", ")
+   * @param pre Row prefix (e.g., " [")
+   * @param pos Row postfix (e.g., "]\n")
+   * @param csep Column separator (e.g., ", ")
    * @return a string representation of this matrix
    */
   public static String format(double[][] m, int w, int d, String pre, String pos, String csep) {
@@ -672,6 +674,7 @@ public final class FormatUtil {
    * Returns a string representation of this matrix. In each line the specified
    * String <code>pre</code> is prefixed.
    *
+   * @param m Matrix
    * @param pre the prefix of each line
    * @return a string representation of this matrix
    */
@@ -687,6 +690,7 @@ public final class FormatUtil {
   /**
    * returns String-representation of Matrix.
    *
+   * @param m Matrix
    * @param nf NumberFormat to specify output precision
    * @return String representation of this Matrix in precision as specified by
    *         given NumberFormat
@@ -699,7 +703,7 @@ public final class FormatUtil {
    * Formats the String collection with the specified separator.
    *
    * @param d the String collection to format
-   * @param sep separator between the single values of the array, e.g. ' '
+   * @param sep separator between the single values of the array, e.g., ' '
    * @return a String representing the String Collection d
    */
   public static String format(Collection<String> d, String sep) {
@@ -729,7 +733,7 @@ public final class FormatUtil {
    * Formats the string array d with the specified separator.
    *
    * @param d the string array to be formatted
-   * @param sep separator between the single values of the array, e.g. ','
+   * @param sep separator between the single values of the array, e.g., ','
    * @return a String representing the string array d
    */
   public static String format(String[] d, String sep) {
@@ -849,8 +853,9 @@ public final class FormatUtil {
   /**
    * Returns a string with the specified number of whitespace.
    *
+   * @param buf String builder to append to
    * @param n the number of whitespace characters
-   * @return a string with the specified number of blanks
+   * @return {@code buf} for chaining
    */
   public static StringBuilder whitespace(StringBuilder buf, int n) {
     while(n >= WHITESPACE_BUFFER_LENGTH) {
@@ -909,7 +914,7 @@ public final class FormatUtil {
       // OK. Probably not exported.
     }
     try {
-      Process p = Runtime.getRuntime().exec(new String[] { "sh", "-c", "tput cols 2> /dev/tty" });
+      Process p = Runtime.getRuntime().exec(new String[] { "/bin/sh", "-c", "tput cols 2> /dev/tty" });
       byte[] buf = new byte[16];
       p.getOutputStream().close(); // We do not intend to write.
       int l = p.getInputStream().read(buf);
@@ -931,6 +936,7 @@ public final class FormatUtil {
    * Formats a time delta in human readable format.
    *
    * @param time time delta in ms
+   * @param sep separator
    * @return Formatted string
    */
   public static String formatTimeDelta(long time, CharSequence sep) {

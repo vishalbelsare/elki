@@ -46,6 +46,8 @@ public interface ModifiableDoubleDBIDList extends DoubleDBIDList {
 
   /**
    * Clear the list contents.
+   * 
+   * @return {@code this} for call chaining
    */
   ModifiableDoubleDBIDList clear();
 
@@ -88,4 +90,11 @@ public interface ModifiableDoubleDBIDList extends DoubleDBIDList {
 
   @Override
   DoubleDBIDListMIter iter();
+
+  /**
+   * Poll elements from a kNN heap.
+   *
+   * @param knn heap
+   */
+  void insertFrom(KNNHeap knn);
 }

@@ -85,7 +85,7 @@ public class AndersonDarlingTest {
   /**
    * Cut-off for extreme values.
    */
-  private static final double SMALL = FastMath.log(0.00000001);
+  private static final double SMALL = Math.log(0.00000001);
 
   /**
    * Test a <i>sorted</i> data set against the standard normal distribution.
@@ -106,8 +106,8 @@ public class AndersonDarlingTest {
     double A2 = 0.;
     for(int i = 0; i < l; ++i) {
       final double x = NormalDistribution.standardNormalCDF(sorted[i]);
-      final double logx = x > 0.00000001 ? FastMath.log(x) : SMALL;
-      final double log1mx = x < 0.99999999 ? FastMath.log(1 - x) : SMALL;
+      final double logx = x > 0.00000001 ? Math.log(x) : SMALL;
+      final double log1mx = x < 0.99999999 ? Math.log(1 - x) : SMALL;
       A2 += ((i << 1) + 1.) / l * logx + (((l - i) << 1) - 1.) / l * log1mx;
     }
     return -l - A2;
@@ -138,8 +138,8 @@ public class AndersonDarlingTest {
     double A2 = 0.;
     for(int i = 0; i < l; ++i) {
       final double x = NormalDistribution.standardNormalCDF((sorted[i] - m) * isigma);
-      final double logx = x > 0.00000001 ? FastMath.log(x) : SMALL;
-      final double log1mx = x < 0.99999999 ? FastMath.log(1 - x) : SMALL;
+      final double logx = x > 0.00000001 ? Math.log(x) : SMALL;
+      final double log1mx = x < 0.99999999 ? Math.log(1 - x) : SMALL;
       A2 += ((i << 1) + 1.) / l * logx + (((l - i) << 1) - 1.) / l * log1mx;
     }
     return -l - A2;
@@ -239,15 +239,22 @@ public class AndersonDarlingTest {
    * <p>
    * Note: the equations assume a correction with
    * {@link #removeBiasNormalDistributionDAgostino}.
+   * <p>
+   * Reference:
+   * <p>
+   * L. Jäntschi and S. D. Bolboacă<br>
+   * Computation of Probability Associated with Anderson-Darling Statistic<br>
+   * Mathematics 6(6)
    * 
    * @param A2 Anderson Darling statistic
    * @param n sample size
    * @return quantile
    */
-  @Reference(authors = "L. Jäntschi and S. D: Bolboacă", //
-      booktitle = "Mathematics", //
+  @Reference(authors = "L. Jäntschi and S. D. Bolboacă", //
+      booktitle = "Mathematics 6(6)", //
       title = "Computation of Probability Associated with Anderson-Darling Statistic", //
-      url = "https://www.mdpi.com/2227-7390/6/6/88")
+      url = "https://doi.org/10.3390/math6060088", //
+      bibkey = "doi:10.3390/math6060088")
   public static double pValueCase0(double A2, int n) {
     if(A2 == Double.POSITIVE_INFINITY) {
       return 0;

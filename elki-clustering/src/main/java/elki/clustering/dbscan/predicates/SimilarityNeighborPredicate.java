@@ -23,15 +23,18 @@ package elki.clustering.dbscan.predicates;
 import elki.data.type.SimpleTypeInformation;
 import elki.data.type.TypeInformation;
 import elki.data.type.TypeUtil;
-import elki.database.Database;
-import elki.database.ids.*;
+import elki.database.ids.DBIDIter;
+import elki.database.ids.DBIDRef;
+import elki.database.ids.DBIDUtil;
+import elki.database.ids.DBIDs;
+import elki.database.ids.DoubleDBIDList;
 import elki.database.query.QueryBuilder;
 import elki.database.query.range.RangeSearcher;
 import elki.database.relation.Relation;
 import elki.similarity.Similarity;
 import elki.utilities.documentation.Reference;
-import elki.utilities.optionhandling.Parameterizer;
 import elki.utilities.optionhandling.OptionID;
+import elki.utilities.optionhandling.Parameterizer;
 import elki.utilities.optionhandling.constraints.CommonConstraints;
 import elki.utilities.optionhandling.parameterization.Parameterization;
 import elki.utilities.optionhandling.parameters.DoubleParameter;
@@ -60,7 +63,7 @@ import elki.utilities.optionhandling.parameters.ObjectParameter;
     booktitle = "Proc. 2nd Int. Conf. on Knowledge Discovery and Data Mining (KDD '96)", //
     url = "http://www.aaai.org/Library/KDD/1996/kdd96-037.php", //
     bibkey = "DBLP:conf/kdd/EsterKSX96")
-public class SimilarityNeighborPredicate<O> implements NeighborPredicate<DoubleDBIDList> {
+public class SimilarityNeighborPredicate<O> implements NeighborPredicate<O, DoubleDBIDList> {
   /**
    * Range to query with
    */
@@ -84,8 +87,7 @@ public class SimilarityNeighborPredicate<O> implements NeighborPredicate<DoubleD
   }
 
   @Override
-  public Instance instantiate(Database database) {
-    Relation<O> relation = database.getRelation(simFunc.getInputTypeRestriction());
+  public Instance instantiate(Relation<? extends O> relation) {
     RangeSearcher<DBIDRef> rq = new QueryBuilder<>(relation, simFunc).similarityRangeByDBID(epsilon);
     return new Instance(epsilon, rq, relation.getDBIDs());
   }
@@ -98,6 +100,15 @@ public class SimilarityNeighborPredicate<O> implements NeighborPredicate<DoubleD
   @Override
   public TypeInformation getInputTypeRestriction() {
     return simFunc.getInputTypeRestriction();
+  }
+
+  /**
+   * Return a name for pretty display.
+   *
+   * @return name
+   */
+  public String getLongName() {
+    return epsilon + "-Neighbors";
   }
 
   /**

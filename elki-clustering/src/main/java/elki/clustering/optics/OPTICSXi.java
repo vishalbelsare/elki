@@ -167,6 +167,7 @@ public class OPTICSXi implements ClusteringAlgorithm<Clustering<OPTICSModel>> {
    * @param clusterOrderResult cluster order result
    * @param ixi Parameter 1 - Xi
    * @param minpts Parameter minPts
+   * @return Clustering result
    */
   private Clustering<OPTICSModel> extractClusters(ClusterOrder clusterOrderResult, double ixi, int minpts) {
     ArrayDBIDs clusterOrder = clusterOrderResult.ids;
@@ -354,7 +355,8 @@ public class OPTICSXi implements ClusteringAlgorithm<Clustering<OPTICSModel>> {
    * Update the mib values of SteepDownAreas, and remove obsolete areas.
    *
    * @param mib Maximum in-between value
-   * @param sdaset Set of steep down areas.
+   * @param sdaset Set of steep down areas
+   * @param ixi Inverse xi value
    */
   private static void updateFilterSDASet(double mib, List<SteepDownArea> sdaset, double ixi) {
     Iterator<SteepDownArea> iter = sdaset.iterator();
@@ -732,11 +734,17 @@ public class OPTICSXi implements ClusteringAlgorithm<Clustering<OPTICSModel>> {
      */
     public static final OptionID KEEPSTEEP_ID = new OptionID("opticsxi.keepsteep", "Keep the steep up/down areas of the plot.");
 
+    /** OPTICS implementation used inside */
     protected OPTICSTypeAlgorithm optics;
 
+    /** Xi parameter (steepness) */
     protected double xi = 0.;
 
-    protected boolean nocorrect = false, keepsteep = false;
+    /** Disable to predecessor-based correction */
+    protected boolean nocorrect = false;
+
+    /** Keep steep area information */
+    protected boolean keepsteep = false;
 
     @Override
     public void configure(Parameterization config) {

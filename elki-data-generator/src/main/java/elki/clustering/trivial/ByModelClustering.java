@@ -49,7 +49,7 @@ import elki.utilities.optionhandling.parameters.PatternParameter;
  * <p>
  * This "algorithm" puts elements into the same cluster when they agree in their
  * model. I.e. it just uses a predefined clustering, and is mostly useful for
- * testing and evaluation (e.g. comparing the result of a real algorithm to the
+ * testing and evaluation (e.g., comparing the result of a real algorithm to the
  * reference result / golden standard used by the generator).
  * 
  * @author Erich Schubert
@@ -92,6 +92,7 @@ public class ByModelClustering implements ClusteringAlgorithm<Clustering<Model>>
    * Run the actual clustering algorithm.
    * 
    * @param relation The data input we use
+   * @return Clustering result
    */
   public Clustering<Model> run(Relation<Model> relation) {
     // Build model mapping

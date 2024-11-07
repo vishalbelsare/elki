@@ -2,17 +2,17 @@
  * Database object identification and ID group handling <em>API</em>.
  * <p>
  * Database IDs (short: DBID) in ELKI are based on the factory pattern, to allow replacing
- * the simple Integer-based DBIDs with more complex implementations, e.g. for use with external
+ * the simple Integer-based DBIDs with more complex implementations, e.g., for use with external
  * databases or to add tracking for debugging purposes. This also allows adding of more efficient
  * implementations later on in a single place.
- * <p>
+ *
  * <h2>DBID interface:</h2>
- * <p>
  * The {@link elki.database.ids.DBID DBID} object identifies a single object.
  * <p>
  * The {@link elki.database.ids.DBIDs DBIDs} hierarchy contains classes for handling groups (sets, arrays) of IDs, that can
  * be seen as a two-dimensional matrix consisting 
  * <table style="border: 1px">
+ * <caption>ELKI DBIDs collection type matrix</caption>
  * <tr>
  * <th></th>
  * <th style="border-bottom: 2px">{@link elki.database.ids.ArrayDBIDs ArrayDBIDs}</th>
@@ -36,7 +36,7 @@
  * <p>
  * These interfaces cannot be instantiated, obviously. Instead, use the static
  * {@link elki.database.ids.DBIDFactory#FACTORY DBIDFactory.FACTORY}, which is also wrapped in the {@link elki.database.ids.DBIDUtil DBIDUtil} class.
- * <p>
+ *
  * <h2>Examples:</h2>
  * <pre>{@code
  * DBIDs allids = database.getIDs();
@@ -48,7 +48,7 @@
  * // add all DBIDs from the hash
  * tree.addDBIDs(hash)
  * }</pre>
- * <p>
+ *
  * <h2>Utility functions:</h2>
  * <ul>
  * <li>{@link elki.database.ids.DBIDUtil#ensureArray DBIDUtil.ensureArray} to ensure {@link elki.database.ids.ArrayDBIDs ArrayDBIDs}</li>

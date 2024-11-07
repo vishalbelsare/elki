@@ -133,6 +133,7 @@ public class ObjHistogram<T> extends AbstractStaticHistogram {
    * Ensure that we have storage for special values (infinity, NaN)
    * 
    * @param idx Index to return.
+   * @return Special sentinel value
    */
   @SuppressWarnings("unchecked")
   protected T getSpecial(int idx) {
@@ -152,7 +153,7 @@ public class ObjHistogram<T> extends AbstractStaticHistogram {
    * 
    * @author Erich Schubert
    */
-  public class Iter extends AbstractStaticHistogram.Iter implements Histogram.Iter {
+  public class Iter extends AbstractStaticHistogram.Iter {
     /**
      * Get the value of the bin.
      * 
@@ -197,6 +198,11 @@ public class ObjHistogram<T> extends AbstractStaticHistogram {
    */
   @FunctionalInterface
   public interface BucketFactory<T> {
+    /**
+     * Allocate a new bucket value for the histogram.
+     * 
+     * @return new empty bucket value
+     */
     T make();
   }
 }

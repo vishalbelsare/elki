@@ -30,7 +30,7 @@ import elki.logging.Logging;
 import elki.utilities.optionhandling.parameterization.Parameterization;
 
 /**
- * Pseudo-k-Means variations, that assigns each object to the nearest center.
+ * Pseudo-k-means variations, that assigns each object to the nearest center.
  *
  * @author Erich Schubert
  * @since 0.7.0
@@ -73,6 +73,7 @@ public class SingleAssignmentKMeans<V extends NumberVector> extends AbstractKMea
      * Constructor.
      *
      * @param relation Relation
+     * @param df Distance funcction
      * @param means Initial means
      */
     public Instance(Relation<? extends NumberVector> relation, NumberVectorDistance<?> df, double[][] means) {

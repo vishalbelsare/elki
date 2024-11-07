@@ -42,8 +42,6 @@ import elki.utilities.optionhandling.parameters.EnumParameter;
 import elki.utilities.optionhandling.parameters.IntParameter;
 import elki.utilities.optionhandling.parameters.ObjectParameter;
 
-import net.jafama.FastMath;
-
 /**
  * Visualization function for Cross-track, Along-track, and minimum distance
  * function.
@@ -114,6 +112,7 @@ public class VisualizeGeodesicDistances extends AbstractApplication {
    * Constructor.
    *
    * @param out Output filename
+   * @param resolution Image resolution
    * @param steps Number of steps in the color map
    * @param mode Visualization mode
    * @param model Earth model
@@ -202,18 +201,21 @@ public class VisualizeGeodesicDistances extends AbstractApplication {
     }
   }
 
+  /**
+   * Color scaling
+   * 
+   * @param col Color
+   * @param reldist Relative distance
+   * @param ceil Whether to ceil the distance
+   * @return Resulting color
+   */
   private int colorMultiply(int col, double reldist, boolean ceil) {
     if(steps > 0) {
-      if(!ceil) {
-        reldist = FastMath.round(reldist * steps) / steps;
-      }
-      else {
-        reldist = FastMath.ceil(reldist * steps) / steps;
-      }
+      reldist = (ceil ? Math.ceil(reldist * steps) : Math.round(reldist * steps)) / steps;
     }
     else if(steps < 0 && reldist > 0.) {
       double s = reldist * -steps;
-      double off = Math.abs(s - FastMath.round(s));
+      double off = Math.abs(s - Math.round(s));
       double factor = -steps * 1. / 1000; // height;
       if(off < factor) { // Blend with black:
         factor = (off / factor);

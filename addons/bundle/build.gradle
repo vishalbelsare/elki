@@ -1,5 +1,5 @@
 plugins {
-  id "com.github.johnrengelman.shadow" version "7.1.2"
+  id "com.github.johnrengelman.shadow" version "8.1.1"
 }
 
 description = 'ELKI - Single-jar Bundle'
@@ -58,6 +58,7 @@ jar {
 }
 
 sourceJar.from(configurations.doc)
+sourceJar.dependsOn project(":elki-core-util").sourceJar // template-generated sources
 
 javadoc {
   source configurations.doc
@@ -74,7 +75,7 @@ shadowJar {
   from jar.outputs.files // To include the bundle jar with above notices!
   //configurations = [ project.configurations.implementation ]
   destinationDirectory = project.parent.rootDir
-  classifier = null
+  archiveClassifier = null
   manifest {
     attributes("Class-Path" : "")
   }

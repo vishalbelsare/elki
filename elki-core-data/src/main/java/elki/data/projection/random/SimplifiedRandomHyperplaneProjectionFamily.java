@@ -145,11 +145,12 @@ public class SimplifiedRandomHyperplaneProjectionFamily implements RandomProject
      * Slower version, for dense multiplication.
      *
      * @param in Input vector
-     * @return Projected data.
+     * @param ret Output vector buffer
+     * @return {@code ret} for method chaining
      */
     private double[] projectDense(NumberVector in, double[] ret) {
       final int k = this.k;
-      final double dim = Math.min(buf.length, in.getDimensionality());
+      final int dim = Math.min(buf.length, in.getDimensionality());
       for(int i = 0; i < dim; i++) {
         final boolean[] row = mat[i];
         double vali = in.doubleValue(i);

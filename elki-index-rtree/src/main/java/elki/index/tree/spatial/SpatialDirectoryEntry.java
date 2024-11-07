@@ -39,9 +39,7 @@ import elki.index.tree.DirectoryEntry;
  * @since 0.1
  */
 public class SpatialDirectoryEntry implements DirectoryEntry, SpatialEntry {
-  /**
-   * Serialization version.
-   */
+  /** Serial version UID */
   private static final long serialVersionUID = 2;
 
   /**
@@ -151,7 +149,7 @@ public class SpatialDirectoryEntry implements DirectoryEntry, SpatialEntry {
   /**
    * Extend the MBR of this node.
    * 
-   * @param responsibleMBR
+   * @param responsibleMBR Inserted MBR
    * @return true when the MBR changed
    */
   public boolean extendMBR(SpatialComparable responsibleMBR) {

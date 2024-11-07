@@ -62,6 +62,8 @@ import elki.utilities.random.RandomFactory;
  * S. Brin<br>
  * Near Neighbor Search in Large Metric Spaces<br>
  * Proc. 21th Int. Conf. on Very Large Data Bases (VLDB)
+ * <p>
+ * TODO: add support for skip thresholds.
  * 
  * @author Robert Gehde
  * @since 0.8.0
@@ -124,6 +126,8 @@ public class GNAT<O> implements DistancePriorityIndex<O> {
    *
    * @param relation data for tree construction
    * @param distance distance function for tree construction
+   * @param random random generator
+   * @param numberVPs number of vantage points to use in each step
    */
   public GNAT(Relation<O> relation, Distance<? super O> distance, RandomFactory random, int numberVPs) {
     this.relation = relation;
@@ -367,6 +371,11 @@ public class GNAT<O> implements DistancePriorityIndex<O> {
      */
     double[][] lowerBound, upperBound;
 
+    /**
+     * Constructor
+     * 
+     * @param vps Number of vantage points to allocate
+     */
     public Node(int vps) {
       this.vps = DBIDUtil.newArray(vps);
       this.children = new Node[vps];
@@ -384,7 +393,7 @@ public class GNAT<O> implements DistancePriorityIndex<O> {
    *
    * @author Robert Gehde
    */
-  public abstract class GNATKNNSearcher {
+  public static abstract class GNATKNNSearcher {
     /**
      * Search the k nearest neighbors
      * 
@@ -499,7 +508,7 @@ public class GNAT<O> implements DistancePriorityIndex<O> {
    * 
    * @author Robert Gehde
    */
-  public abstract class GNATRangeSearcher {
+  public static abstract class GNATRangeSearcher {
     /**
      * Perform a range search on the MVP Tree
      *

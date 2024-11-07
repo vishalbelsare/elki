@@ -47,11 +47,11 @@ import elki.visualization.visualizers.scatterplot.AbstractScatterplotVisualizati
 
 /**
  * Visualize uncertain objects by their bounding box.
- *
+ * <p>
  * Note: this is currently a hack. Our projection only applies to vector field
- * relations currently, and this visualizer activates if such a relation (e.g. a
- * sample, or the center of mass) has a parent relation of type UncertainObject.
- * But it serves the purpose.
+ * relations currently, and this visualizer activates if such a relation (e.g.,
+ * a sample, or the center of mass) has a parent relation of type
+ * UncertainObject. But it serves the purpose.
  *
  * @author Erich Schubert
  * @since 0.7.0
@@ -96,7 +96,7 @@ public class UncertainBoundingBoxVisualization implements VisFactory {
    *
    * @assoc - - - StylingPolicy
    */
-  public class Instance extends AbstractScatterplotVisualization {
+  public static class Instance extends AbstractScatterplotVisualization {
     /**
      * CSS class for uncertain bounding boxes.
      */

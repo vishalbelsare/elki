@@ -39,7 +39,7 @@ public class ShortVector implements NumberVector {
   /**
    * Static instance (object factory).
    */
-  public static final ShortVector.Factory STATIC = new ShortVector.Factory();
+  public static final ShortVector.Factory FACTORY = new ShortVector.Factory();
 
   /**
    * Serializer for up to 2^15-1 dimensions.
@@ -91,11 +91,8 @@ public class ShortVector implements NumberVector {
    * 
    * @param dimension the selected attribute. Attributes are counted starting
    *        with 0.
-   * 
    * @throws IllegalArgumentException if the specified dimension is out of range
    *         of the possible attributes
-   * 
-   *         {@inheritDoc}
    */
   @Override
   @Deprecated
@@ -151,6 +148,29 @@ public class ShortVector implements NumberVector {
   }
 
   /**
+   * Copy a short array into a new vector.
+   * 
+   * @param vals Values
+   * @return Wrapped vector
+   */
+  public static ShortVector copy(short[] vals) {
+    return new ShortVector(vals);
+  }
+
+  /**
+   * Wrap a short array as vector (without copying).
+   * <p>
+   * Note: modifying the array afterwards can lead to problems if the data has,
+   * e.g., been added to an index, which relies on them being immutable!
+   * 
+   * @param vals Values
+   * @return Wrapped vector
+   */
+  public static ShortVector wrap(short[] vals) {
+    return new ShortVector(vals, true);
+  }
+
+  /**
    * Factory for Short vectors.
    * 
    * @author Erich Schubert
@@ -196,7 +216,7 @@ public class ShortVector implements NumberVector {
     public static class Par implements Parameterizer {
       @Override
       public ShortVector.Factory make() {
-        return STATIC;
+        return FACTORY;
       }
     }
   }

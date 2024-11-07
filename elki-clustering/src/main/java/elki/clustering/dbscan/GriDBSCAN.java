@@ -68,7 +68,6 @@ import elki.utilities.optionhandling.parameters.IntParameter;
 import elki.utilities.optionhandling.parameters.ObjectParameter;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import net.jafama.FastMath;
 
 /**
  * Using Grid for Accelerating Density-Based Clustering.
@@ -149,6 +148,9 @@ public class GriDBSCAN<V extends NumberVector> implements ClusteringAlgorithm<Cl
 
   /**
    * Performs the DBSCAN algorithm on the given database.
+   * 
+   * @param relation Relation to cluster
+   * @return Clustering result
    */
   public Clustering<Model> run(Relation<V> relation) {
     final DBIDs ids = relation.getDBIDs();
@@ -275,6 +277,7 @@ public class GriDBSCAN<V extends NumberVector> implements ClusteringAlgorithm<Cl
      * Performs the DBSCAN algorithm on the given database.
      *
      * @param relation Relation to process
+     * @return Clustering result
      */
     public Clustering<Model> run(Relation<V> relation) {
       final DBIDs ids = relation.getDBIDs();
@@ -326,6 +329,16 @@ public class GriDBSCAN<V extends NumberVector> implements ClusteringAlgorithm<Cl
       return buildResult(ids, clusterid);
     }
 
+    /**
+     * Run DBSCAN on a single cell
+     * 
+     * @param cellids objects in the cell
+     * @param relation data relation
+     * @param neighbors neighbor output (recycled object)
+     * @param activeSet active set of cluster seeds
+     * @param clusterid cluster number
+     * @return next cluster id
+     */
     private int runDBSCANOnCell(DBIDs cellids, Relation<V> relation, ModifiableDoubleDBIDList neighbors, ArrayModifiableDBIDs activeSet, int clusterid) {
       temporary.clear(); // Reset to "UNPROCESSED"
       ProxyView<V> rel = new ProxyView<>(cellids, relation);
@@ -381,7 +394,7 @@ public class GriDBSCAN<V extends NumberVector> implements ClusteringAlgorithm<Cl
         if(mi == Double.NEGATIVE_INFINITY || ma == Double.POSITIVE_INFINITY || mi != mi || ma != ma) {
           throw new IncompatibleDataException("Dimension " + d + " contains non-finite values.");
         }
-        int c = cells[d] = Math.max(1, (int) FastMath.ceil(wi / gridwidth));
+        int c = cells[d] = Math.max(1, (int) Math.ceil(wi / gridwidth));
         offset[d] = mi - (c * gridwidth - wi) * .5;
         assert (offset[d] <= mi) || (offset[d] + c * gridwidth >= ma) : "Grid inconsistent.";
         total *= c;
@@ -442,8 +455,8 @@ public class GriDBSCAN<V extends NumberVector> implements ClusteringAlgorithm<Cl
     private void insertIntoGrid(DBIDRef id, V obj, int d, int v) {
       final int cn = cells[d]; // Number of cells in this dimension
       final int nd = d + 1; // Next dimension
-      int mi = Math.max(0, (int) FastMath.floor((obj.doubleValue(d) - offset[d] - epsilon) / gridwidth));
-      int ma = Math.min(cn - 1, (int) FastMath.floor((obj.doubleValue(d) - offset[d] + epsilon) / gridwidth));
+      int mi = Math.max(0, (int) Math.floor((obj.doubleValue(d) - offset[d] - epsilon) / gridwidth));
+      int ma = Math.min(cn - 1, (int) Math.floor((obj.doubleValue(d) - offset[d] + epsilon) / gridwidth));
       assert (mi <= ma) : "Grid inconsistent.";
       for(int i = mi; i <= ma; i++) {
         int c = v * cn + i;
@@ -499,6 +512,7 @@ public class GriDBSCAN<V extends NumberVector> implements ClusteringAlgorithm<Cl
     /**
      * Set-based expand cluster implementation.
      *
+     * @param seed Seed object
      * @param clusterid ID of the current cluster.
      * @param clusterids Current object to cluster mapping.
      * @param neighbors Neighbors acquired by initial getNeighbors call.

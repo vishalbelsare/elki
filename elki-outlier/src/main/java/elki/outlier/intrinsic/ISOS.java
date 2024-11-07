@@ -63,7 +63,7 @@ import net.jafama.FastMath;
  * Erich Schubert, Michael Gertz<br>
  * Intrinsic t-Stochastic Neighbor Embedding for Visualization and Outlier
  * Detection: A Remedy Against the Curse of Dimensionality?<br>
- * Proc. Int. Conf. Similarity Search and Applications, SISAP'2017
+ * Proc. Int. Conf. Similarity Search and Applications, SISAP 2017
  * 
  * @author Erich Schubert
  * @since 0.7.5
@@ -73,7 +73,7 @@ import net.jafama.FastMath;
 @Title("ISOS: Intrinsic Stochastic Outlier Selection")
 @Reference(authors = "Erich Schubert, Michael Gertz", //
     title = "Intrinsic t-Stochastic Neighbor Embedding for Visualization and Outlier Detection: A Remedy Against the Curse of Dimensionality?", //
-    booktitle = "Proc. Int. Conf. Similarity Search and Applications, SISAP'2017", //
+    booktitle = "Proc. Int. Conf. Similarity Search and Applications, SISAP 2017", //
     url = "https://doi.org/10.1007/978-3-319-68474-1_13", //
     bibkey = "DBLP:conf/sisap/SchubertG17")
 public class ISOS<O> implements OutlierAlgorithm {
@@ -131,7 +131,7 @@ public class ISOS<O> implements OutlierAlgorithm {
     final int k1 = k + 1; // Query size
     final double perplexity = k / 3.;
     KNNSearcher<DBIDRef> knnq = new QueryBuilder<>(relation, distance).kNNByDBID(k1);
-    final double logPerp = perplexity > 1. ? FastMath.log(perplexity) : .1;
+    final double logPerp = perplexity > 1. ? Math.log(perplexity) : .1;
 
     double[] p = new double[k + 10];
     ModifiableDoubleDBIDList dists = DBIDUtil.newDistanceDBIDList(k + 10);
@@ -178,6 +178,15 @@ public class ISOS<O> implements OutlierAlgorithm {
     return new OutlierResult(meta, scoreres);
   }
 
+  /**
+   * Adjust the distances for ID
+   * 
+   * @param ignore Object to ignore (query object)
+   * @param ki Neighbor iterator
+   * @param max Maximum distance
+   * @param id Intrinsic dimensionality estimate
+   * @param dists Adjusted distances storage (output)
+   */
   protected static void adjustDistances(DBIDRef ignore, DoubleDBIDListIter ki, double max, double id, ModifiableDoubleDBIDList dists) {
     dists.clear();
     double scaleexp = id * .5; // Generate squared distances.

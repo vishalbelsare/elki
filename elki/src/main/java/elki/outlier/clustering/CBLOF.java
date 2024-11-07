@@ -27,7 +27,7 @@ import java.util.List;
 
 import elki.Algorithm;
 import elki.clustering.ClusteringAlgorithm;
-import elki.clustering.kmeans.SortMeans;
+import elki.clustering.Leader;
 import elki.data.Cluster;
 import elki.data.Clustering;
 import elki.data.NumberVector;
@@ -227,23 +227,29 @@ public class CBLOF<O extends NumberVector> implements OutlierAlgorithm {
       // Compute CBLOF scores for members of large clusters
       for(DBIDIter iter = largeCluster.getIDs().iter(); iter.valid(); iter.advance()) {
         double cblof = computeLargeClusterCBLOF(relation.get(iter), distance, mean, largeCluster);
-        storeCBLOFScore(cblofs, cblofMinMax, cblof, iter);
+        cblofs.putDouble(iter, cblof);
+        cblofMinMax.put(cblof);
       }
     }
 
     for(Cluster<MeanModel> smallCluster : smallClusters) {
       for(DBIDIter iter = smallCluster.getIDs().iter(); iter.valid(); iter.advance()) {
         double cblof = computeSmallClusterCBLOF(relation.get(iter), distance, largeClusterMeans, smallCluster);
-        storeCBLOFScore(cblofs, cblofMinMax, cblof, iter);
+        cblofs.putDouble(iter, cblof);
+        cblofMinMax.put(cblof);
       }
     }
   }
 
-  private void storeCBLOFScore(WritableDoubleDataStore cblofs, DoubleMinMax cblofMinMax, double cblof, DBIDIter iter) {
-    cblofs.putDouble(iter, cblof);
-    cblofMinMax.put(cblof);
-  }
-
+  /**
+   * Compute CBLOF for a small cluster
+   * 
+   * @param obj Current object
+   * @param distance Distance function
+   * @param largeClusterMeans Means of large clusters
+   * @param cluster Cluster
+   * @return CBLOF score
+   */
   private double computeSmallClusterCBLOF(O obj, NumberVectorDistance<? super O> distance, List<NumberVector> largeClusterMeans, Cluster<MeanModel> cluster) {
     // Get distance to nearest large cluster
     double nearestLargeClusterDistance = Double.MAX_VALUE;
@@ -256,6 +262,15 @@ public class CBLOF<O extends NumberVector> implements OutlierAlgorithm {
     return cluster.size() * nearestLargeClusterDistance;
   }
 
+  /**
+   * Compute CBLOF for a large cluster
+   * 
+   * @param obj Current object
+   * @param distance Distance function
+   * @param clusterMean Cluster mean
+   * @param cluster Cluster
+   * @return CBLOF score
+   */
   private double computeLargeClusterCBLOF(O obj, NumberVectorDistance<? super O> distance, NumberVector clusterMean, Cluster<MeanModel> cluster) {
     // Get distance to center of containing cluster
     return cluster.size() * distance.distance(obj, clusterMean);
@@ -284,7 +299,7 @@ public class CBLOF<O extends NumberVector> implements OutlierAlgorithm {
     /**
      * Parameter to specify the alpha value to be used by the algorithm.
      */
-    public static final OptionID ALPHPA_ID = new OptionID("cblof.alpha", "The ratio of the data that should be included in the large clusters");
+    public static final OptionID ALPHA_ID = new OptionID("cblof.alpha", "The ratio of the data that should be included in the large clusters");
 
     /**
      * Parameter to specify the beta value to be used by the algorithm.
@@ -323,14 +338,14 @@ public class CBLOF<O extends NumberVector> implements OutlierAlgorithm {
     public void configure(Parameterization config) {
       new ObjectParameter<NumberVectorDistance<? super O>>(Algorithm.Utils.DISTANCE_FUNCTION_ID, NumberVectorDistance.class, EuclideanDistance.class) //
           .grab(config, x -> distance = x);
-      new DoubleParameter(ALPHPA_ID)//
+      new DoubleParameter(ALPHA_ID)//
           .addConstraint(CommonConstraints.LESS_THAN_ONE_DOUBLE)//
           .addConstraint(CommonConstraints.GREATER_THAN_ZERO_DOUBLE) //
           .grab(config, x -> alpha = x);
       new DoubleParameter(BETA_ID)//
           .addConstraint(CommonConstraints.GREATER_THAN_ONE_DOUBLE) //
           .grab(config, x -> beta = x);
-      new ObjectParameter<ClusteringAlgorithm<Clustering<MeanModel>>>(CLUSTERING_ID, ClusteringAlgorithm.class, SortMeans.class) //
+      new ObjectParameter<ClusteringAlgorithm<Clustering<MeanModel>>>(CLUSTERING_ID, ClusteringAlgorithm.class, Leader.class) //
           .grab(config, x -> clusteringAlgorithm = x);
     }
 

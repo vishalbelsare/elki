@@ -97,7 +97,7 @@ public class ExpGammaDistribution implements Distribution {
   @Override
   public double nextRandom(Random random) {
     return quantile(random.nextDouble(), k, theta, shift);
-    // return FastMath.log(GammaDistribution.nextRandom(k, 1., random)) / theta
+    // return Math.log(GammaDistribution.nextRandom(k, 1., random)) / theta
     // + shift;
   }
 
@@ -131,6 +131,7 @@ public class ExpGammaDistribution implements Distribution {
    * @param x Value
    * @param k Shape k
    * @param theta Theta = 1.0/Beta aka. "scaling" parameter
+   * @param shift Translation offset (location shift)
    * @return cdf value
    */
   public static double cdf(double x, double k, double theta, double shift) {
@@ -153,6 +154,7 @@ public class ExpGammaDistribution implements Distribution {
    * @param x Value
    * @param k Shape k
    * @param theta Theta = 1.0/Beta aka. "scaling" parameter
+   * @param shift Translation offset (location shift)
    * @return cdf value
    */
   public static double logcdf(double x, double k, double theta, double shift) {
@@ -166,6 +168,7 @@ public class ExpGammaDistribution implements Distribution {
    * @param x query value
    * @param k Alpha
    * @param theta Theta = 1 / Beta
+   * @param shift Translation offset (location shift)
    * @return probability density
    */
   public static double pdf(double x, double k, double theta, double shift) {
@@ -186,6 +189,7 @@ public class ExpGammaDistribution implements Distribution {
    * @param x query value
    * @param k Alpha
    * @param theta Theta = 1 / Beta
+   * @param shift Translation offset (location shift)
    * @return log probability density
    */
   public static double logpdf(double x, double k, double theta, double shift) {
@@ -197,7 +201,7 @@ public class ExpGammaDistribution implements Distribution {
     }
     x = (x - shift) * theta;
     double ex = FastMath.exp(x);
-    return ex < Double.POSITIVE_INFINITY ? k * x - ex - GammaDistribution.logGamma(k) + FastMath.log(theta) : Double.NEGATIVE_INFINITY;
+    return ex < Double.POSITIVE_INFINITY ? k * x - ex - GammaDistribution.logGamma(k) + Math.log(theta) : Double.NEGATIVE_INFINITY;
   }
 
   /**
@@ -210,7 +214,7 @@ public class ExpGammaDistribution implements Distribution {
    * @return Probit for ExpGamma distribution
    */
   public static double quantile(double p, double k, double theta, double shift) {
-    return FastMath.log(GammaDistribution.quantile(p, k, 1)) / theta + shift;
+    return Math.log(GammaDistribution.quantile(p, k, 1)) / theta + shift;
   }
 
   /**

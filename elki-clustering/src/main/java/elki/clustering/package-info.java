@@ -1,5 +1,5 @@
 /**
- * Clustering algorithms
+ * Clustering algorithms.
  * <p>
  * Clustering algorithms are supposed to implement the
  * {@link elki.Algorithm}-Interface.
@@ -12,8 +12,6 @@
  *
  * @opt include .*elki.data.Clustering
  * @opt include .*elki.data.Model
- *
- * @see elki.algorithm
  */
 /*
  * This file is part of ELKI:

@@ -50,7 +50,7 @@ class IntegerDBIDVar implements DBIDVar, IntegerDBIDs {
   /**
    * Constructor.
    *
-   * @param val
+   * @param val DBID to store
    */
   protected IntegerDBIDVar(DBIDRef val) {
     this.id = val.internalGetIndex();
@@ -148,7 +148,7 @@ class IntegerDBIDVar implements DBIDVar, IntegerDBIDs {
    *
    * @author Erich Schubert
    */
-  protected class Itr implements IntegerDBIDArrayIter, IntegerDBIDRef {
+  protected class Itr implements IntegerDBIDArrayIter {
     /**
      * Iterator position: We use an integer so we can support retract().
      */

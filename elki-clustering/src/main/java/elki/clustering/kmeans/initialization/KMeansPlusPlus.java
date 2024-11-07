@@ -36,6 +36,7 @@ import elki.distance.NumberVectorDistance;
 import elki.logging.Logging;
 import elki.logging.statistics.LongStatistic;
 import elki.utilities.documentation.Reference;
+import elki.utilities.documentation.Title;
 import elki.utilities.random.RandomFactory;
 
 /**
@@ -52,6 +53,7 @@ import elki.utilities.random.RandomFactory;
  *
  * @param <O> Vector type
  */
+@Title("K-means++")
 @Reference(authors = "D. Arthur, S. Vassilvitskii", //
     title = "k-means++: the advantages of careful seeding", //
     booktitle = "Proc. 18th Annual ACM-SIAM Symposium on Discrete Algorithms (SODA 2007)", //
@@ -178,7 +180,14 @@ public class KMeansPlusPlus<O> extends AbstractKMeansInitialization implements K
       return weightsum;
     }
 
-    protected double nextDouble(double weightsum) {
+    /**
+     * Next random double, avoiding some numerical problems with small weights.
+     *
+     * @param random Random generator
+     * @param weightsum Weight sum
+     * @return Random double
+     */
+    public static double nextDouble(Random random, double weightsum) {
       double r = random.nextDouble() * weightsum;
       while(r <= 0 && weightsum > Double.MIN_NORMAL) {
         r = random.nextDouble() * weightsum; // Try harder to not choose 0.
@@ -254,7 +263,7 @@ public class KMeansPlusPlus<O> extends AbstractKMeansInitialization implements K
         if(weightsum < Double.MIN_NORMAL) {
           LOG.warning("Could not choose a reasonable mean - to few unique data points?");
         }
-        double r = nextDouble(weightsum);
+        double r = nextDouble(random, weightsum);
         DBIDIter it = ids.iter();
         while(it.valid()) {
           if((r -= weights.doubleValue(it)) <= 0) {
@@ -290,11 +299,24 @@ public class KMeansPlusPlus<O> extends AbstractKMeansInitialization implements K
      */
     DistanceQuery<?> distQ;
 
+    /**
+     * Constructor.
+     * 
+     * @param ids Object IDs
+     * @param distQ Distance query
+     * @param rnd Random factory
+     */
     public MedoidsInstance(DBIDs ids, DistanceQuery<?> distQ, RandomFactory rnd) {
       super(ids, rnd);
       this.distQ = distQ;
     }
 
+    /**
+     * Run initialization for k-medoids.
+     * 
+     * @param k Number of clusters to choose
+     * @return Initial medoids
+     */
     public DBIDs run(int k) {
       ArrayModifiableDBIDs means = DBIDUtil.newArray(k);
       // Choose the first object
@@ -327,7 +349,7 @@ public class KMeansPlusPlus<O> extends AbstractKMeansInitialization implements K
         if(weightsum < Double.MIN_NORMAL) {
           LOG.warning("Could not choose a reasonable mean - to few unique data points?");
         }
-        double r = nextDouble(weightsum);
+        double r = nextDouble(random, weightsum);
         DBIDIter it = ids.iter();
         while(it.valid()) {
           if((r -= weights.doubleValue(it)) <= 0) {

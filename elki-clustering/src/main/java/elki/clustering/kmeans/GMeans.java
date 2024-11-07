@@ -40,6 +40,7 @@ import elki.math.MathUtil;
 import elki.math.linearalgebra.CovarianceMatrix;
 import elki.math.statistics.tests.AndersonDarlingTest;
 import elki.utilities.documentation.Reference;
+import elki.utilities.documentation.Title;
 import elki.utilities.optionhandling.OptionID;
 import elki.utilities.optionhandling.constraints.CommonConstraints;
 import elki.utilities.optionhandling.parameterization.Parameterization;
@@ -63,10 +64,11 @@ import elki.utilities.random.RandomFactory;
  * @param <V> Vector
  * @param <M> Model
  */
+@Title("G-means")
 @Reference(authors = "G. Hamerly and C. Elkan", //
     title = "Learning the k in k-means", //
     booktitle = "Neural Information Processing Systems", //
-    url = "https://www.researchgate.net/publication/2869155_Learning_the_K_in_K-Means", //
+    url = "https://papers.nips.cc/paper_files/paper/2003/hash/234833147b97bb6aed53a8f4f1c7a7d8-Abstract.html", //
     bibkey = "DBLP:conf/nips/HamerlyE03")
 public class GMeans<V extends NumberVector, M extends MeanModel> extends XMeans<V, M> {
   /**

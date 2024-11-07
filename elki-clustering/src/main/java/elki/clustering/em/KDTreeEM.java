@@ -34,6 +34,7 @@ import elki.data.Clustering;
 import elki.data.DoubleVector;
 import elki.data.NumberVector;
 import elki.data.model.EMModel;
+import elki.data.type.CombinedTypeInformation;
 import elki.data.type.SimpleTypeInformation;
 import elki.data.type.TypeInformation;
 import elki.data.type.TypeUtil;
@@ -408,9 +409,10 @@ public class KDTreeEM implements ClusteringAlgorithm<Clustering<EMModel>> {
    * Calculates the model limits inside this node by translating the Gaussian
    * model into a squared function.
    * 
+   * @param node tree node
    * @param model model to calculate the limits for
    * @param minpnt result array for argmin
-   * @param maxpnt result array for argmax
+   * @param maxpnt result array for hard
    * @param ret Return array
    */
   private void calculateModelLimits(KDTree node, TextbookMultivariateGaussianModel model, double[] minpnt, double[] maxpnt, double[] ret) {
@@ -480,7 +482,7 @@ public class KDTreeEM implements ClusteringAlgorithm<Clustering<EMModel>> {
 
   @Override
   public TypeInformation[] getInputTypeRestriction() {
-    return TypeUtil.array(TypeUtil.NUMBER_VECTOR_FIELD);
+    return TypeUtil.array(new CombinedTypeInformation(TypeUtil.NUMBER_VECTOR_FIELD, mfactory.getInputTypeRestriction()));
   }
 
   /**
@@ -488,7 +490,7 @@ public class KDTreeEM implements ClusteringAlgorithm<Clustering<EMModel>> {
    * 
    * @author Robert Gehde
    */
-  class KDTree {
+  static class KDTree {
     /**
      * Child nodes:
      */

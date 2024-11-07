@@ -29,13 +29,10 @@ import java.util.Map;
 import elki.clustering.ClusteringAlgorithm;
 import elki.clustering.em.models.BetulaClusterModel;
 import elki.clustering.em.models.BetulaClusterModelFactory;
-import elki.clustering.kmeans.AbstractKMeans;
-import elki.clustering.kmeans.KMeans;
 import elki.data.Cluster;
 import elki.data.Clustering;
 import elki.data.NumberVector;
 import elki.data.model.EMModel;
-import elki.data.type.SimpleTypeInformation;
 import elki.data.type.TypeInformation;
 import elki.data.type.TypeUtil;
 import elki.database.datastore.DataStoreFactory;
@@ -54,11 +51,11 @@ import elki.logging.statistics.Duration;
 import elki.logging.statistics.LongStatistic;
 import elki.result.Metadata;
 import elki.utilities.documentation.Reference;
-import elki.utilities.optionhandling.OptionID;
 import elki.utilities.optionhandling.Parameterizer;
 import elki.utilities.optionhandling.constraints.CommonConstraints;
 import elki.utilities.optionhandling.parameterization.Parameterization;
 import elki.utilities.optionhandling.parameters.DoubleParameter;
+import elki.utilities.optionhandling.parameters.Flag;
 import elki.utilities.optionhandling.parameters.IntParameter;
 import elki.utilities.optionhandling.parameters.ObjectParameter;
 
@@ -84,12 +81,12 @@ import net.jafama.FastMath;
     title = "BETULA: Fast Clustering of Large Data with Improved BIRCH CF-Trees", //
     booktitle = "Information Systems", //
     url = "https://doi.org/10.1016/j.is.2021.101918", //
-    bibkey = "DBLP:journals/is/LangS21")
+    bibkey = "DBLP:journals/is/LangS22")
 public class BetulaGMM implements ClusteringAlgorithm<Clustering<EMModel>> {
   /**
    * Class logger.
    */
-  private static final Logging LOG = Logging.getLogger(BetulaGMMWeighted.class);
+  private static final Logging LOG = Logging.getLogger(BetulaGMM.class);
 
   /**
    * CFTree factory.
@@ -107,6 +104,11 @@ public class BetulaGMM implements ClusteringAlgorithm<Clustering<EMModel>> {
   private double delta;
 
   /**
+   * Minimum number of iterations.
+   */
+  int miniter;
+
+  /**
    * Maximum number of iterations.
    */
   int maxiter;
@@ -114,7 +116,12 @@ public class BetulaGMM implements ClusteringAlgorithm<Clustering<EMModel>> {
   /**
    * Prior to enable MAP estimation (use 0 for MLE)
    */
-  private double prior = 0.;
+  private double prior;
+
+  /**
+   * Use hard for assignment in every iteration
+   */
+  private boolean hard;
 
   /**
    * Retain soft assignments.
@@ -124,12 +131,7 @@ public class BetulaGMM implements ClusteringAlgorithm<Clustering<EMModel>> {
   /**
    * Minimum loglikelihood to avoid -infinity.
    */
-  protected static final double MIN_LOGLIKELIHOOD = -100000;
-
-  /**
-   * Soft assignment result type.
-   */
-  public static final SimpleTypeInformation<double[]> SOFT_TYPE = new SimpleTypeInformation<>(double[].class);
+  protected static final double MIN_LOGLIKELIHOOD = EM.MIN_LOGLIKELIHOOD;
 
   /**
    * Maximum number of iterations.
@@ -140,20 +142,25 @@ public class BetulaGMM implements ClusteringAlgorithm<Clustering<EMModel>> {
    * Constructor.
    *
    * @param cffactory CFTree factory
+   * @param initialization Initialization method
    * @param k Number of clusters
+   * @param delta Delta parameter
+   * @param miniter Minimum number of iterations
    * @param maxiter Maximum number of iterations
    * @param soft Return soft clustering results
-   * @param initialization Initialization method
    * @param prior MAP prior
+   * @param hard hard assignment in iterations
    */
-  public BetulaGMM(CFTree.Factory<?> cffactory, double delta, int k, int maxiter, boolean soft, BetulaClusterModelFactory<?> initialization, double prior) {
+  public BetulaGMM(CFTree.Factory<?> cffactory, BetulaClusterModelFactory<?> initialization, int k, double delta, int miniter, int maxiter, boolean hard, boolean soft, double prior) {
     super();
     this.cffactory = cffactory;
-    this.delta = delta;
-    this.k = k;
-    this.maxiter = maxiter;
-    this.soft = soft;
     this.initializer = initialization;
+    this.k = k;
+    this.delta = delta;
+    this.miniter = miniter;
+    this.maxiter = maxiter;
+    this.hard = hard;
+    this.soft = soft;
     this.prior = prior;
   }
 
@@ -181,7 +188,8 @@ public class BetulaGMM implements ClusteringAlgorithm<Clustering<EMModel>> {
     // Initialize EM Model
     List<? extends BetulaClusterModel> models = initializer.buildInitialModels(cfs, k, tree);
     Map<ClusterFeature, double[]> probClusterIGivenX = new Reference2ObjectOpenHashMap<>(cfs.size());
-    double loglikelihood = assignProbabilitiesToInstances(cfs, models, probClusterIGivenX);
+    double loglikelihood = hard ? assignInstancesHard(cfs, models, probClusterIGivenX) : //
+        assignProbabilitiesToInstances(cfs, models, probClusterIGivenX);
     DoubleStatistic likestat = new DoubleStatistic(this.getClass().getName() + ".modelloglikelihood");
     LOG.statistics(likestat.setDouble(loglikelihood));
 
@@ -192,48 +200,51 @@ public class BetulaGMM implements ClusteringAlgorithm<Clustering<EMModel>> {
       final double oldloglikelihood = loglikelihood;
       recomputeCovarianceMatrices(cfs, probClusterIGivenX, models, prior, tree.getRoot().getCF().getWeight());
       // reassign probabilities
-      loglikelihood = assignProbabilitiesToInstances(cfs, models, probClusterIGivenX);
+      loglikelihood = hard ? assignInstancesHard(cfs, models, probClusterIGivenX) : //
+          assignProbabilitiesToInstances(cfs, models, probClusterIGivenX);
 
       LOG.statistics(likestat.setDouble(loglikelihood));
       if(loglikelihood - bestloglikelihood > delta) {
         lastimprovement = it;
         bestloglikelihood = loglikelihood;
       }
-      if(Math.abs(loglikelihood - oldloglikelihood) <= delta || lastimprovement < it >> 1) {
+      if(it >= miniter && Math.abs(loglikelihood - oldloglikelihood) <= delta || lastimprovement < it >> 1) {
         break;
       }
     }
     LOG.statistics(new LongStatistic(this.getClass().getName() + ".iterations", it));
     LOG.statistics(modeltime.end());
-
-    // fill result with clusters and models
-    List<ModifiableDBIDs> hardClusters = new ArrayList<>(k);
-    for(int i = 0; i < k; i++) {
-      hardClusters.add(DBIDUtil.newArray());
-    }
-
-    WritableDataStore<double[]> finalClusterIGivenX = DataStoreUtil.makeStorage(relation.getDBIDs(), DataStoreFactory.HINT_HOT | DataStoreFactory.HINT_SORTED, double[].class);
-    loglikelihood = assignProbabilitiesToInstances(relation, models, finalClusterIGivenX);
-    LOG.statistics(new DoubleStatistic(this.getClass().getName() + ".loglikelihood", loglikelihood));
-
-    // provide a hard clustering
-    for(DBIDIter iditer = relation.iterDBIDs(); iditer.valid(); iditer.advance()) {
-      hardClusters.get(argmax(finalClusterIGivenX.get(iditer))).add(iditer);
-    }
     Clustering<EMModel> result = new Clustering<>();
     Metadata.of(result).setLongName("EM Clustering");
-    // provide models within the result
-    for(int i = 0; i < k; i++) {
-      result.addToplevelCluster(new Cluster<>(hardClusters.get(i), models.get(i).finalizeCluster()));
+    if(tree.isModelOnly()) {
+      for(int i = 0; i < k; i++) {
+        result.addToplevelCluster(new Cluster<>(DBIDUtil.newArray(1), models.get(i).finalizeCluster()));
+      }
     }
-    if(isSoft()) {
-      Metadata.hierarchyOf(result).addChild(new MaterializedRelation<>("EM Cluster Probabilities", SOFT_TYPE, relation.getDBIDs(), finalClusterIGivenX));
+    else {
+      // fill result with clusters and models
+      List<ModifiableDBIDs> hardClusters = new ArrayList<>(k);
+      for(int i = 0; i < k; i++) {
+        hardClusters.add(DBIDUtil.newArray());
+      }
+
+      WritableDataStore<double[]> finalClusterIGivenX = DataStoreUtil.makeStorage(relation.getDBIDs(), DataStoreFactory.HINT_HOT | DataStoreFactory.HINT_SORTED, double[].class);
+      loglikelihood = assignProbabilitiesToInstances(relation, models, finalClusterIGivenX);
+      LOG.statistics(new DoubleStatistic(this.getClass().getName() + ".loglikelihood", loglikelihood));
+
+      // provide a hard clustering
+      for(DBIDIter iditer = relation.iterDBIDs(); iditer.valid(); iditer.advance()) {
+        hardClusters.get(argmax(finalClusterIGivenX.get(iditer))).add(iditer);
+      }
+      // provide models within the result
+      for(int i = 0; i < k; i++) {
+        result.addToplevelCluster(new Cluster<>(hardClusters.get(i), models.get(i).finalizeCluster()));
+      }
+      if(soft) {
+        Metadata.hierarchyOf(result).addChild(new MaterializedRelation<>("EM Cluster Probabilities", EM.SOFT_TYPE, relation.getDBIDs(), finalClusterIGivenX));
+      }
     }
     return result;
-  }
-
-  private boolean isSoft() {
-    return soft;
   }
 
   /**
@@ -249,7 +260,6 @@ public class BetulaGMM implements ClusteringAlgorithm<Clustering<EMModel>> {
    * @return the expectation value of the current mixture of distributions
    */
   public double assignProbabilitiesToInstances(ArrayList<? extends ClusterFeature> cfs, List<? extends BetulaClusterModel> models, Map<ClusterFeature, double[]> probClusterIGivenX) {
-    final int k = models.size();
     double emSum = 0.;
     int n = 0;
     for(int i = 0; i < cfs.size(); i++) {
@@ -303,6 +313,40 @@ public class BetulaGMM implements ClusteringAlgorithm<Clustering<EMModel>> {
   }
 
   /**
+   * Assigns the current probability values to the instances in the database and
+   * compute the expectation value of the current mixture of distributions.
+   * <p>
+   * Computed as the sum of the logarithms of the prior probability of each
+   * instance.
+   * 
+   * @param cfs the cluster features to evaluate
+   * @param models Cluster models
+   * @param probClusterIGivenX Output storage for cluster probabilities
+   * @return the expectation value of the current mixture of distributions
+   */
+  public double assignInstancesHard(ArrayList<? extends ClusterFeature> cfs, List<? extends BetulaClusterModel> models, Map<ClusterFeature, double[]> probClusterIGivenX) {
+    double emSum = 0.;
+    int n = 0;
+    for(int i = 0; i < cfs.size(); i++) {
+      ClusterFeature cfsi = cfs.get(i);
+      double[] probs = new double[k];
+      for(int j = 0; j < k; j++) {
+        final double v = models.get(j).estimateLogDensity((NumberVector) cfsi);
+        probs[j] = v > MIN_LOGLIKELIHOOD ? v : MIN_LOGLIKELIHOOD;
+      }
+      final double logP = EM.logSumExp(probs);
+      int best = argmax(probs);
+      for(int j = 0; j < k; j++) {
+        probs[j] = j == best ? 1. : 0.;
+      }
+      probClusterIGivenX.put(cfsi, probs);
+      emSum += logP * cfsi.getWeight();
+      n += cfsi.getWeight();
+    }
+    return emSum / n;
+  }
+
+  /**
    * Recompute the covariance matrixes.
    * 
    * @param cfs Cluster features to evaluate
@@ -348,33 +392,24 @@ public class BetulaGMM implements ClusteringAlgorithm<Clustering<EMModel>> {
    */
   public static class Par implements Parameterizer {
     /**
-     * Parameter to specify the EM cluster models to use.
-     */
-    public static final OptionID INIT_ID = new OptionID("em.model", //
-        "Model factory.");
-
-    /**
-     * Parameter to specify the termination criterion for maximization of E(M):
-     * E(M) - E(M') &lt; em.delta, must be a double equal to or greater than 0.
-     */
-    public static final OptionID DELTA_ID = new OptionID("em.delta", //
-        "The termination criterion for maximization of E(M): " + //
-            "E(M) - E(M') < em.delta");
-
-    /**
-     * Parameter to specify the MAP prior
-     */
-    public static final OptionID PRIOR_ID = new OptionID("em.map.prior", "Regularization factor for MAP estimation.");
-
-    /**
      * CFTree factory.
      */
     CFTree.Factory<?> cffactory;
 
     /**
+     * initialization method
+     */
+    protected BetulaClusterModelFactory<?> initialization;
+
+    /**
      * k Parameter.
      */
     protected int k;
+
+    /**
+     * Minimum number of iterations.
+     */
+    protected int miniter = 1;
 
     /**
      * Maximum number of iterations.
@@ -387,41 +422,50 @@ public class BetulaGMM implements ClusteringAlgorithm<Clustering<EMModel>> {
     protected double delta;
 
     /**
+     * MAP prior probability
+     */
+    protected double prior = 0.;
+
+    /**
+     * Use hard for assignment in every iteration
+     */
+    protected boolean hard = false;
+
+    /**
      * Retain soft assignments.
      */
     protected boolean soft;
 
-    protected double prior = 0.;
-
-    /**
-     * initialization method
-     */
-    protected BetulaClusterModelFactory<?> initialization;
-
     @Override
     public void configure(Parameterization config) {
       cffactory = config.tryInstantiate(CFTree.Factory.class);
-      new ObjectParameter<BetulaClusterModelFactory<?>>(INIT_ID, BetulaClusterModelFactory.class) //
+      new ObjectParameter<BetulaClusterModelFactory<?>>(EM.Par.MODEL_ID, BetulaClusterModelFactory.class) //
           .grab(config, x -> initialization = x);
-      new IntParameter(AbstractKMeans.K_ID) //
+      new IntParameter(EM.Par.K_ID) //
           .addConstraint(CommonConstraints.GREATER_EQUAL_ONE_INT) //
           .grab(config, x -> k = x);
-      new DoubleParameter(DELTA_ID, 1e-7)//
+      new DoubleParameter(EM.Par.DELTA_ID, 1e-7) //
           .addConstraint(CommonConstraints.GREATER_EQUAL_ZERO_DOUBLE) //
           .grab(config, x -> delta = x);
-      new DoubleParameter(PRIOR_ID) //
+      new IntParameter(EM.Par.MINITER_ID) //
+          .addConstraint(CommonConstraints.GREATER_EQUAL_ZERO_INT) //
           .setOptional(true) //
-          .addConstraint(CommonConstraints.GREATER_THAN_ZERO_DOUBLE) //
-          .grab(config, x -> prior = x);
-      new IntParameter(KMeans.MAXITER_ID)//
+          .grab(config, x -> miniter = x);
+      new IntParameter(EM.Par.MAXITER_ID) //
           .addConstraint(CommonConstraints.GREATER_EQUAL_ZERO_INT) //
           .setOptional(true) //
           .grab(config, x -> maxiter = x);
+      new Flag(EM.Par.HARD_ID) //
+          .grab(config, x -> hard = x);
+      new DoubleParameter(EM.Par.PRIOR_ID) //
+          .setOptional(true) //
+          .addConstraint(CommonConstraints.GREATER_THAN_ZERO_DOUBLE) //
+          .grab(config, x -> prior = x);
     }
 
     @Override
     public BetulaGMM make() {
-      return new BetulaGMM(cffactory, delta, k, maxiter, soft, initialization, prior);
+      return new BetulaGMM(cffactory, initialization, k, delta, miniter, maxiter, hard, soft, prior);
     }
   }
 }

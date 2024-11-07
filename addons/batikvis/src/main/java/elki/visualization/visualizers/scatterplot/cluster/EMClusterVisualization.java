@@ -121,7 +121,7 @@ public class EMClusterVisualization implements VisFactory {
    */
   // TODO: nicer stacking of n-fold hulls
   // TODO: can we find a proper sphere for 3+ dimensions?
-  public class Instance extends AbstractScatterplotVisualization {
+  public static class Instance extends AbstractScatterplotVisualization {
     /**
      * Generic tags to indicate the type of element. Used in IDs, CSS-Classes
      * etc.
@@ -189,14 +189,13 @@ public class EMClusterVisualization implements VisFactory {
       for(int cnum = 0; cnum < clusters.size(); cnum++) {
         Cluster<Model> clus = ci.next();
         DBIDs ids = clus.getIDs();
-        if(ids.size() <= 0) {
-          continue;
-        }
         if(!(clus.getModel() instanceof EMModel)) {
           continue;
         }
         EMModel model = (EMModel) clus.getModel();
-
+        if(ids.size() <= 0 && model.getWeight() <= 0) {
+          continue;
+        }
         // Add cluster style
         final String sname = EMBORDER + "_" + cnum;
         if(!svgp.getCSSClassManager().contains(sname)) {
@@ -215,6 +214,13 @@ public class EMClusterVisualization implements VisFactory {
 
         double[][] covmat = model.getCovarianceMatrix();
         double[] centroid = model.getMean();
+        if (covmat.length < centroid.length) {
+          if (covmat[0].length < centroid.length) {
+            covmat = timesEquals(identity(centroid.length, centroid.length), covmat[0][0]);
+          }else{
+            covmat = diagonal(covmat[0]);
+          }
+        }
         double[] cent = proj.fastProjectDataToRenderSpace(centroid);
 
         // Compute the eigenvectors
@@ -455,6 +461,8 @@ public class EMClusterVisualization implements VisFactory {
      * @param cent Center
      * @param pre Previous point
      * @param nex Next point
+     * @param oPrev orthogonal to previous point
+     * @param oNext orthogonal to next point
      * @param scale Scaling factor
      */
     private void drawArc(SVGPath path, double[] cent, double[] pre, double[] nex, double[] oPrev, double[] oNext, double scale) {

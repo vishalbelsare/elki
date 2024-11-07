@@ -20,6 +20,10 @@ elki.clustering.hierarchical.SLINK single-link single-linkage
 elki.clustering.hierarchical.Anderberg
 elki.clustering.hierarchical.NNChain
 elki.clustering.hierarchical.LinearMemoryNNChain
+elki.clustering.hierarchical.BufferedSearchSingleLink
+elki.clustering.hierarchical.HeapOfSearchersSingleLink HSSL
+elki.clustering.hierarchical.IncrementalNearestNeighborChain INNC
+elki.clustering.hierarchical.RestartingSearchSingleLink RSSL
 elki.clustering.hierarchical.AGNES HAC SAHN
 elki.clustering.hierarchical.CLINK Defays
 elki.clustering.hierarchical.SLINKHDBSCANLinearMemory
@@ -52,6 +56,7 @@ elki.clustering.kmeans.MacQueenKMeans
 elki.clustering.kmeans.ShallotKMeans
 elki.clustering.kmeans.SingleAssignmentKMeans
 elki.clustering.kmeans.SimplifiedElkanKMeans
+elki.clustering.kmeans.SimplifiedHamerlyKMeans
 elki.clustering.kmeans.SortMeans
 elki.clustering.kmeans.YinYangKMeans
 elki.clustering.kmeans.XMeans
@@ -91,6 +96,10 @@ elki.clustering.silhouette.PAMSIL
 elki.clustering.silhouette.PAMMEDSIL
 elki.clustering.SNNClustering
 elki.clustering.biclustering.ChengAndChurch
+elki.clustering.consistency.ENFORCE
+elki.clustering.consistency.KMeansCP
+elki.clustering.consistency.FastKMeansCP
+elki.clustering.consistency.ClosedNeighborhoods
 elki.clustering.correlation.COPAC
 elki.clustering.correlation.ERiC
 elki.clustering.correlation.FourC

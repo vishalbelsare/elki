@@ -26,6 +26,8 @@ import elki.utilities.io.FormatUtil;
 /**
  * Cluster model of an EM cluster, providing a mean and a full covariance
  * Matrix.
+ * <p>
+ * TODO: also allow simpler (non-covariate) models.
  * 
  * @author Erich Schubert
  * @since 0.2
@@ -40,10 +42,11 @@ public class EMModel extends MeanModel {
    * Constructor.
    * 
    * @param mean Mean vector
+   * @param weight Weight
    * @param covarianceMatrix Covariance matrix
    */
-  public EMModel(double[] mean, double[][] covarianceMatrix) {
-    super(mean);
+  public EMModel(double[] mean, double weight, double[][] covarianceMatrix) {
+    super(mean, weight);
     this.covarianceMatrix = covarianceMatrix;
   }
 

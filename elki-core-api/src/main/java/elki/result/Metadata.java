@@ -82,6 +82,7 @@ public class Metadata extends WeakReference<Object> {
    * @author Erich Schubert
    */
   private static class CleanerThread extends Thread {
+    /** Constructor of cleanup thread. */
     public CleanerThread() {
       super("ELKI Garbage Collection");
       setDaemon(true); // Don't prevent program termination
@@ -383,6 +384,9 @@ public class Metadata extends WeakReference<Object> {
       }
       for(int i = 0; i < nump; i++) {
         if(parent == parents[i] || p == parents[i].get()) {
+          if(LOG.isDebugging()) {
+            LOG.debug("Parent " + p + " already added", new Throwable());
+          }
           return false; // Exists already.
         }
       }
@@ -408,7 +412,10 @@ public class Metadata extends WeakReference<Object> {
         return true;
       }
       for(int i = 0; i < numc; i++) {
-        if(child.equals(children[i])) {
+        if(child.equals(children[i]) || children[i] instanceof Reference && child.equals(((Reference<?>) children[i]).get())) {
+          if(LOG.isDebugging()) {
+            LOG.debug("Child " + child + " already added", new Throwable());
+          }
           return false; // Exists already
         }
       }
@@ -735,6 +742,7 @@ public class Metadata extends WeakReference<Object> {
         return this;
       }
 
+      /** @return true if a next element is available */
       private boolean lookahead() {
         while(true) {
           if(extra != null || (subiter != null && subiter.valid())) {
@@ -813,6 +821,7 @@ public class Metadata extends WeakReference<Object> {
         return this;
       }
 
+      /** @return true if a next element is available */
       private boolean lookahead() {
         while(true) {
           if(extra != null || (subiter != null && subiter.valid())) {
@@ -930,7 +939,7 @@ public class Metadata extends WeakReference<Object> {
   }
 
   /**
-   * Base class for iterators that need to look ahead, e.g. to check
+   * Base class for iterators that need to look ahead, e.g., to check
    * conditions on the next element.
    *
    * @author Erich Schubert

@@ -23,8 +23,6 @@ package elki.math.statistics.dependence;
 import elki.utilities.datastructures.arraylike.NumberArrayAdapter;
 import elki.utilities.optionhandling.Parameterizer;
 
-import net.jafama.FastMath;
-
 /**
  * Mutual Information (MI) dependence measure by dividing each attribute into
  * equal-width bins. MI can be seen as Kullback–Leibler divergence of the joint
@@ -57,7 +55,7 @@ public class MutualInformationEquiwidthDependence implements Dependence {
   @Override
   public <A, B> double dependence(NumberArrayAdapter<?, A> adapter1, A data1, NumberArrayAdapter<?, B> adapter2, B data2) {
     final int len = Utils.size(adapter1, data1, adapter2, data2);
-    final int bins = (int) FastMath.round(Math.sqrt(len));
+    final int bins = (int) Math.round(Math.sqrt(len));
     final int maxbin = bins - 1;
 
     double min1 = adapter1.getDouble(data1, 0), max1 = min1;
@@ -84,8 +82,8 @@ public class MutualInformationEquiwidthDependence implements Dependence {
     int[] margin1 = new int[bins], margin2 = new int[bins];
     int[][] counts = new int[bins][bins];
     for(int i = 0; i < len; i++) {
-      int bin1 = (int) FastMath.floor((adapter1.getDouble(data1, i) - min1) * scale1);
-      int bin2 = (int) FastMath.floor((adapter2.getDouble(data2, i) - min2) * scale2);
+      int bin1 = (int) Math.floor((adapter1.getDouble(data1, i) - min1) * scale1);
+      int bin2 = (int) Math.floor((adapter2.getDouble(data2, i) - min2) * scale2);
       bin1 = bin1 < bins ? bin1 : maxbin;
       bin2 = bin2 < bins ? bin2 : maxbin;
       margin1[bin1]++;
@@ -113,12 +111,12 @@ public class MutualInformationEquiwidthDependence implements Dependence {
           double pXY = cell / (double) len;
           // Inverse pXpY: 1 / (pX*pY)
           final double ipXpY = ipX * len / margin2[bin2];
-          e += pXY * FastMath.log(pXY * ipXpY);
+          e += pXY * Math.log(pXY * ipXpY);
         }
       }
     }
     // Expected value for uniform identical: log(bins)!
-    return e / FastMath.log(bins);
+    return e / Math.log(bins);
   }
 
   /**

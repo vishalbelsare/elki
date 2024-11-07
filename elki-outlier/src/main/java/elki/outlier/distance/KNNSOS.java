@@ -54,8 +54,6 @@ import elki.utilities.optionhandling.parameterization.Parameterization;
 import elki.utilities.optionhandling.parameters.IntParameter;
 import elki.utilities.optionhandling.parameters.ObjectParameter;
 
-import net.jafama.FastMath;
-
 /**
  * kNN-based adaption of Stochastic Outlier Selection.
  * <p>
@@ -69,7 +67,7 @@ import net.jafama.FastMath;
  * Erich Schubert, Michael Gertz<br>
  * Intrinsic t-Stochastic Neighbor Embedding for Visualization and Outlier
  * Detection: A Remedy Against the Curse of Dimensionality?<br>
- * Proc. Int. Conf. Similarity Search and Applications, SISAP'2017
+ * Proc. Int. Conf. Similarity Search and Applications, SISAP 2017
  * <p>
  * Original reference:
  * <p>
@@ -85,7 +83,7 @@ import net.jafama.FastMath;
 @Title("KNNSOS: k-Nearest-Neighbor Stochastic Outlier Selection")
 @Reference(authors = "Erich Schubert, Michael Gertz", //
     title = "Intrinsic t-Stochastic Neighbor Embedding for Visualization and Outlier Detection: A Remedy Against the Curse of Dimensionality?", //
-    booktitle = "Proc. Int. Conf. Similarity Search and Applications, SISAP'2017", //
+    booktitle = "Proc. Int. Conf. Similarity Search and Applications, SISAP 2017", //
     url = "https://doi.org/10.1007/978-3-319-68474-1_13", //
     bibkey = "DBLP:conf/sisap/SchubertG17")
 @Reference(authors = "J. Janssens, F. Huszár, E. Postma, J. van den Herik", //
@@ -141,7 +139,7 @@ public class KNNSOS<O> implements OutlierAlgorithm {
     final int k1 = k + 1; // Query size
     final double perplexity = k / 3.;
     KNNSearcher<DBIDRef> knnq = new QueryBuilder<>(relation, distance).kNNByDBID(k1);
-    final double logPerp = perplexity > 1. ? FastMath.log(perplexity) : .1;
+    final double logPerp = perplexity > 1. ? Math.log(perplexity) : .1;
 
     double[] p = new double[k + 10];
     FiniteProgress prog = LOG.isVerbose() ? new FiniteProgress("KNNSOS scores", relation.size(), LOG) : null;

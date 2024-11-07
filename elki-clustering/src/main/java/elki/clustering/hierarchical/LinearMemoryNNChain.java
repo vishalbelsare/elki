@@ -31,6 +31,7 @@ import elki.database.ids.DBIDUtil;
 import elki.database.relation.Relation;
 import elki.logging.Logging;
 import elki.logging.progress.FiniteProgress;
+import elki.logging.statistics.LongStatistic;
 import elki.math.MathUtil;
 import elki.utilities.datastructures.arraylike.IntegerArray;
 import elki.utilities.documentation.Reference;
@@ -46,8 +47,7 @@ import elki.utilities.optionhandling.parameters.ObjectParameter;
  * Reference:
  * <p>
  * F. Murtagh<br>
- * Multidimensional Clustering Algorithms,1985<br>
- * http://www.multiresolutions.com/strule/MClA/
+ * Multidimensional Clustering Algorithms, 1985
  *
  * @author Erich Schubert, Robert Gehde
  * @since 0.8.0
@@ -57,13 +57,18 @@ import elki.utilities.optionhandling.parameters.ObjectParameter;
 @Reference(authors = "F. Murtagh", //
     booktitle = "Multidimensional Clustering Algorithms", //
     title = "Multidimensional Clustering Algorithms", //
-    url = "http://www.multiresolutions.com/strule/MClA/")
+    bibkey = "books/Murtagh85")
 public class LinearMemoryNNChain<O extends NumberVector> implements HierarchicalClusteringAlgorithm {
   /**
    * Class logger.
    */
   private static final Logging LOG = Logging.getLogger(LinearMemoryNNChain.class);
 
+  /**
+   * Key for statistics logging.
+   */
+  private final static String KEY = LinearMemoryNNChain.class.getName();
+  
   /**
    * Linkage method.
    */
@@ -86,8 +91,7 @@ public class LinearMemoryNNChain<O extends NumberVector> implements Hierarchical
    */
   public ClusterMergeHistory run(Relation<O> relation) {
     ArrayDBIDs ids = DBIDUtil.ensureArray(relation.getDBIDs());
-    ClusterMergeHistoryBuilder builder = new ClusterMergeHistoryBuilder(ids, true);
-    return new Instance<O>(linkage).run(ids, relation, builder);
+    return new Instance<O>(linkage).run(ids, relation, new ClusterMergeHistoryBuilder(ids, true));
   }
 
   /**
@@ -104,6 +108,11 @@ public class LinearMemoryNNChain<O extends NumberVector> implements Hierarchical
     private GeometricLinkage linkage;
 
     /**
+     * Number of distance computations
+     */
+    private long distanceComputations = 0L;
+
+    /**
      * Constructor.
      *
      * @param linkage Linkage
@@ -112,9 +121,18 @@ public class LinearMemoryNNChain<O extends NumberVector> implements Hierarchical
       this.linkage = linkage;
     }
 
+    /**
+     * Run the clustering algorithm.
+     * 
+     * @param ids Object IDs to process
+     * @param relation Data relation
+     * @param builder Cluster hierarchy builder
+     * @return Cluster hierarchy
+     */
     public ClusterMergeHistory run(ArrayDBIDs ids, Relation<O> relation, ClusterMergeHistoryBuilder builder) {
       DBIDArrayIter it = ids.iter(), it2 = ids.iter();
       nnChainCore(it, it2, builder, relation);
+      LOG.statistics(new LongStatistic(KEY + ".distance-computations", distanceComputations));
       builder.optimizeOrder();
       return builder.complete();
     }
@@ -125,12 +143,13 @@ public class LinearMemoryNNChain<O extends NumberVector> implements Hierarchical
      * @param aIt Iterator to access relation objects
      * @param aIt2 Iterator to access relation objects
      * @param builder Result builder
+     * @param rel Relation to process
      */
     private void nnChainCore(DBIDArrayIter aIt, DBIDArrayIter aIt2, ClusterMergeHistoryBuilder builder, Relation<O> rel) {
       final int size = rel.size();
       boolean warnedIrreducible = false;
       // The maximum chain size = number of ids + 1, but usually much less
-      IntegerArray chain = new IntegerArray(size << 1);
+      IntegerArray chain = new IntegerArray(size + 1);
       int[] clustermap = MathUtil.sequence(0, size);
 
       // Instead of a distance matrix we have an array of points
@@ -169,14 +188,16 @@ public class LinearMemoryNNChain<O extends NumberVector> implements Hierarchical
           chain.size--; // Remove b
         }
         // For ties, always prefer the second-last element b:
-        final int bSize = builder.getSize(b);
-        double minDist = linkage.distance(clusters[a], builder.getSize(a), clusters[b], bSize);
+        final int bSize = builder.getSize(clustermap[b]);
+        double minDist = linkage.linkage(clusters[a], builder.getSize(clustermap[a]), clusters[b], bSize);
+        distanceComputations++;
         do {
-          final int aSize = builder.getSize(a);
+          final int aSize = builder.getSize(clustermap[a]);
           int c = b;
           for(int i = 0; i < end; i++) {
             if(i != a && i != b && clustermap[i] >= 0) {
-              double dist = linkage.distance(clusters[a], aSize, clusters[i], builder.getSize(i));
+              double dist = linkage.linkage(clusters[a], aSize, clusters[i], builder.getSize(clustermap[i]));
+              distanceComputations++;
               if(dist < minDist) {
                 minDist = dist;
                 c = i;
@@ -195,7 +216,7 @@ public class LinearMemoryNNChain<O extends NumberVector> implements Hierarchical
           a = b;
           b = tmp;
         }
-        assert minDist == linkage.distance(clusters[a], builder.getSize(a), clusters[b], builder.getSize(b));
+        assert minDist == linkage.linkage(clusters[a], builder.getSize(clustermap[a]), clusters[b], builder.getSize(clustermap[b]));
         merge(size, clusters, builder, clustermap, minDist, a, b);
         end = AGNES.Instance.shrinkActiveSet(clustermap, end, a);
         chain.size -= 3;
@@ -220,7 +241,7 @@ public class LinearMemoryNNChain<O extends NumberVector> implements Hierarchical
       assert x >= 0 && y >= 0;
       final int xx = clustermap[x], yy = clustermap[y];
       final int sizex = builder.getSize(xx), sizey = builder.getSize(yy);
-      int zz = builder.strictAdd(xx, linkage.restore(mindist, builder.isSquared), yy);
+      int zz = builder.strictAdd(xx, linkage.restoreLinkage(mindist, builder.isSquared), yy);
       assert builder.getSize(zz) == sizex + sizey;
       clustermap[y] = zz;
       clustermap[x] = -1; // deactivate

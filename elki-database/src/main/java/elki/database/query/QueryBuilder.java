@@ -101,6 +101,12 @@ public class QueryBuilder<O> {
   public static final int FLAG_PRECOMPUTE = 0b10_0000;
 
   /**
+   * Flag indicating large parts will be retrieved (e.g., prefer larger page
+   * sizes)
+   */
+  public static final int FLAG_LOW_SELECTIVITY = 0b100_0000;
+
+  /**
    * Flags that do not allow the optimizer to run.
    */
   public static final int FLAGS_NO_OPTIMIZER = FLAG_LINEAR_ONLY | FLAG_CHEAP_ONLY;
@@ -149,6 +155,7 @@ public class QueryBuilder<O> {
    * Constructor.
    *
    * @param relation Relation to query
+   * @param distance Distance function
    */
   public QueryBuilder(Relation<O> relation, Distance<? super O> distance) {
     this.relation = Objects.requireNonNull(relation);
@@ -171,6 +178,7 @@ public class QueryBuilder<O> {
    * Constructor.
    *
    * @param relation Relation to query
+   * @param similarity Similarity function
    */
   public QueryBuilder(Relation<O> relation, Similarity<? super O> similarity) {
     this.relation = Objects.requireNonNull(relation);
@@ -259,6 +267,17 @@ public class QueryBuilder<O> {
   }
 
   /**
+   * Indicate that the search range will often become large, and hence that
+   * large pagesizes may be more efficient. Not all indexes support this flag.
+   * 
+   * @return query builder, for chaining
+   */
+  public QueryBuilder<O> lowSelectivity() {
+    this.flags |= FLAG_LOW_SELECTIVITY;
+    return this;
+  }
+
+  /**
    * Build a distance query.
    *
    * @return distance query
@@ -342,22 +361,24 @@ public class QueryBuilder<O> {
    */
   @SuppressWarnings("unchecked")
   public KNNSearcher<O> kNNByObject(int maxk) {
-    int precompute = flags & FLAG_PRECOMPUTE;
-    flags ^= precompute; // Mask
+    int masked = flags & (FLAG_PRECOMPUTE | FLAG_OPTIMIZED_ONLY);
+    flags ^= masked; // Mask
     DistanceQuery<O> distanceQuery = distanceQuery();
-    flags ^= precompute; // Restore
-    for(It<KNNIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(KNNIndex.class); it.valid(); it.advance()) {
-      KNNSearcher<O> q = it.get().kNNByObject(distanceQuery, maxk, flags);
-      logUsing(it.get(), "kNN", q != null);
-      if(q != null) {
-        return q;
+    flags ^= masked; // Restore
+    if((flags & FLAG_LINEAR_ONLY) == 0) {
+      for(It<KNNIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(KNNIndex.class); it.valid(); it.advance()) {
+        KNNSearcher<O> q = it.get().kNNByObject(distanceQuery, maxk, flags);
+        logUsing(it.get(), "kNN", q != null);
+        if(q != null) {
+          return q;
+        }
       }
-    }
-    // Use optimizer
-    if((flags & FLAGS_NO_OPTIMIZER) == 0) {
-      KNNSearcher<O> q = OPTIMIZER.kNNByObject(relation, distanceQuery, maxk, flags);
-      if(q != null) {
-        return q;
+      // Use optimizer
+      if((flags & FLAGS_NO_OPTIMIZER) == 0) {
+        KNNSearcher<O> q = OPTIMIZER.kNNByObject(relation, distanceQuery, maxk, flags);
+        if(q != null) {
+          return q;
+        }
       }
     }
     if((flags & FLAG_OPTIMIZED_ONLY) != 0) {
@@ -393,22 +414,24 @@ public class QueryBuilder<O> {
    */
   @SuppressWarnings("unchecked")
   public KNNSearcher<DBIDRef> kNNByDBID(int maxk) {
-    int precompute = flags & FLAG_PRECOMPUTE;
-    flags ^= precompute; // Mask
+    int masked = flags & (FLAG_PRECOMPUTE | FLAG_OPTIMIZED_ONLY);
+    flags ^= masked; // Mask
     DistanceQuery<O> distanceQuery = distanceQuery();
-    flags ^= precompute; // Restore
-    for(It<KNNIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(KNNIndex.class); it.valid(); it.advance()) {
-      KNNSearcher<DBIDRef> q = it.get().kNNByDBID(distanceQuery, maxk, flags);
-      logUsing(it.get(), "kNN", q != null);
-      if(q != null) {
-        return q;
+    flags ^= masked; // Restore
+    if((flags & FLAG_LINEAR_ONLY) == 0) {
+      for(It<KNNIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(KNNIndex.class); it.valid(); it.advance()) {
+        KNNSearcher<DBIDRef> q = it.get().kNNByDBID(distanceQuery, maxk, flags);
+        logUsing(it.get(), "kNN", q != null);
+        if(q != null) {
+          return q;
+        }
       }
-    }
-    // Use optimizer
-    if((flags & FLAGS_NO_OPTIMIZER) == 0) {
-      KNNSearcher<DBIDRef> q = OPTIMIZER.kNNByDBID(relation, distanceQuery, maxk, flags);
-      if(q != null) {
-        return q;
+      // Use optimizer
+      if((flags & FLAGS_NO_OPTIMIZER) == 0) {
+        KNNSearcher<DBIDRef> q = OPTIMIZER.kNNByDBID(relation, distanceQuery, maxk, flags);
+        if(q != null) {
+          return q;
+        }
       }
     }
     if((flags & FLAG_OPTIMIZED_ONLY) != 0) {
@@ -444,23 +467,24 @@ public class QueryBuilder<O> {
    */
   @SuppressWarnings("unchecked")
   public RangeSearcher<O> rangeByObject(double maxrange) {
-    int precompute = flags & FLAG_PRECOMPUTE;
-    flags ^= precompute; // Mask
+    int masked = flags & (FLAG_PRECOMPUTE | FLAG_OPTIMIZED_ONLY);
+    flags ^= masked; // Mask
     DistanceQuery<O> distanceQuery = distanceQuery();
-    flags ^= precompute; // Restore
-    for(It<RangeIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(RangeIndex.class); it.valid(); it.advance()) {
-      RangeSearcher<O> q = it.get().rangeByObject(distanceQuery, maxrange, flags);
-      logUsing(it.get(), "range", q != null);
-      if(q != null) {
-        return q;
+    flags ^= masked; // Restore
+    if((flags & FLAG_LINEAR_ONLY) == 0) {
+      for(It<RangeIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(RangeIndex.class); it.valid(); it.advance()) {
+        RangeSearcher<O> q = it.get().rangeByObject(distanceQuery, maxrange, flags);
+        logUsing(it.get(), "range", q != null);
+        if(q != null) {
+          return q;
+        }
       }
-    }
-
-    // Use optimizer
-    if((flags & FLAGS_NO_OPTIMIZER) == 0) {
-      RangeSearcher<O> q = OPTIMIZER.rangeByObject(relation, distanceQuery, maxrange, flags);
-      if(q != null) {
-        return q;
+      // Use optimizer
+      if((flags & FLAGS_NO_OPTIMIZER) == 0) {
+        RangeSearcher<O> q = OPTIMIZER.rangeByObject(relation, distanceQuery, maxrange, flags);
+        if(q != null) {
+          return q;
+        }
       }
     }
     if((flags & FLAG_OPTIMIZED_ONLY) != 0) {
@@ -496,23 +520,24 @@ public class QueryBuilder<O> {
    */
   @SuppressWarnings("unchecked")
   public RangeSearcher<DBIDRef> rangeByDBID(double maxrange) {
-    int precompute = flags & FLAG_PRECOMPUTE;
-    flags ^= precompute; // Mask
+    int masked = flags & (FLAG_PRECOMPUTE | FLAG_OPTIMIZED_ONLY);
+    flags ^= masked; // Mask
     DistanceQuery<O> distanceQuery = distanceQuery();
-    flags ^= precompute; // Restore
-    for(It<RangeIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(RangeIndex.class); it.valid(); it.advance()) {
-      RangeSearcher<DBIDRef> q = it.get().rangeByDBID(distanceQuery, maxrange, flags);
-      logUsing(it.get(), "range", q != null);
-      if(q != null) {
-        return q;
+    flags ^= masked; // Restore
+    if((flags & FLAG_LINEAR_ONLY) == 0) {
+      for(It<RangeIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(RangeIndex.class); it.valid(); it.advance()) {
+        RangeSearcher<DBIDRef> q = it.get().rangeByDBID(distanceQuery, maxrange, flags);
+        logUsing(it.get(), "range", q != null);
+        if(q != null) {
+          return q;
+        }
       }
-    }
-
-    // Use optimizer
-    if((flags & FLAGS_NO_OPTIMIZER) == 0) {
-      RangeSearcher<DBIDRef> q = OPTIMIZER.rangeByDBID(relation, distanceQuery, maxrange, flags);
-      if(q != null) {
-        return q;
+      // Use optimizer
+      if((flags & FLAGS_NO_OPTIMIZER) == 0) {
+        RangeSearcher<DBIDRef> q = OPTIMIZER.rangeByDBID(relation, distanceQuery, maxrange, flags);
+        if(q != null) {
+          return q;
+        }
       }
     }
     if((flags & FLAG_OPTIMIZED_ONLY) != 0) {
@@ -549,23 +574,24 @@ public class QueryBuilder<O> {
    * @return Similarity range query
    */
   public RangeSearcher<O> similarityRangeByObject(double threshold) {
-    int precompute = flags & FLAG_PRECOMPUTE;
-    flags ^= precompute; // Mask
+    int masked = flags & (FLAG_PRECOMPUTE | FLAG_OPTIMIZED_ONLY);
+    flags ^= masked; // Mask
     SimilarityQuery<O> simQuery = similarityQuery();
-    flags ^= precompute; // Restore
-    for(It<SimilarityRangeIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(SimilarityRangeIndex.class); it.valid(); it.advance()) {
-      RangeSearcher<O> q = it.get().similarityRangeByObject(simQuery, threshold, flags);
-      logUsing(it.get(), "similarity", q != null);
-      if(q != null) {
-        return q;
+    flags ^= masked; // Restore
+    if((flags & FLAG_LINEAR_ONLY) == 0) {
+      for(It<SimilarityRangeIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(SimilarityRangeIndex.class); it.valid(); it.advance()) {
+        RangeSearcher<O> q = it.get().similarityRangeByObject(simQuery, threshold, flags);
+        logUsing(it.get(), "similarity", q != null);
+        if(q != null) {
+          return q;
+        }
       }
-    }
-
-    // Use optimizer
-    if((flags & FLAGS_NO_OPTIMIZER) == 0) {
-      RangeSearcher<O> q = OPTIMIZER.similarityRangeByObject(relation, simQuery, threshold, flags);
-      if(q != null) {
-        return q;
+      // Use optimizer
+      if((flags & FLAGS_NO_OPTIMIZER) == 0) {
+        RangeSearcher<O> q = OPTIMIZER.similarityRangeByObject(relation, simQuery, threshold, flags);
+        if(q != null) {
+          return q;
+        }
       }
     }
     if((flags & FLAG_OPTIMIZED_ONLY) != 0) {
@@ -596,23 +622,24 @@ public class QueryBuilder<O> {
    * @return Similarity range query
    */
   public RangeSearcher<DBIDRef> similarityRangeByDBID(double threshold) {
-    int precompute = flags & FLAG_PRECOMPUTE;
-    flags ^= precompute; // Mask
+    int masked = flags & (FLAG_PRECOMPUTE | FLAG_OPTIMIZED_ONLY);
+    flags ^= masked; // Mask
     SimilarityQuery<O> simQuery = similarityQuery();
-    flags ^= precompute; // Restore
-    for(It<SimilarityRangeIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(SimilarityRangeIndex.class); it.valid(); it.advance()) {
-      RangeSearcher<DBIDRef> q = it.get().similarityRangeByDBID(simQuery, threshold, flags);
-      logUsing(it.get(), "similarity", q != null);
-      if(q != null) {
-        return q;
+    flags ^= masked; // Restore
+    if((flags & FLAG_LINEAR_ONLY) == 0) {
+      for(It<SimilarityRangeIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(SimilarityRangeIndex.class); it.valid(); it.advance()) {
+        RangeSearcher<DBIDRef> q = it.get().similarityRangeByDBID(simQuery, threshold, flags);
+        logUsing(it.get(), "similarity", q != null);
+        if(q != null) {
+          return q;
+        }
       }
-    }
-
-    // Use optimizer
-    if((flags & FLAGS_NO_OPTIMIZER) == 0) {
-      RangeSearcher<DBIDRef> q = OPTIMIZER.similarityRangeByDBID(relation, simQuery, threshold, flags);
-      if(q != null) {
-        return q;
+      // Use optimizer
+      if((flags & FLAGS_NO_OPTIMIZER) == 0) {
+        RangeSearcher<DBIDRef> q = OPTIMIZER.similarityRangeByDBID(relation, simQuery, threshold, flags);
+        if(q != null) {
+          return q;
+        }
       }
     }
     if((flags & FLAG_OPTIMIZED_ONLY) != 0) {
@@ -641,23 +668,24 @@ public class QueryBuilder<O> {
    * @return rkNN query
    */
   public RKNNSearcher<O> rKNNByObject(int k) {
-    int precompute = flags & FLAG_PRECOMPUTE;
-    flags ^= precompute; // Mask
+    int masked = flags & (FLAG_PRECOMPUTE | FLAG_OPTIMIZED_ONLY);
+    flags ^= masked; // Mask
     DistanceQuery<O> distanceQuery = distanceQuery();
-    flags ^= precompute; // Restore
-    for(It<RKNNIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(RKNNIndex.class); it.valid(); it.advance()) {
-      RKNNSearcher<O> q = it.get().rkNNByObject(distanceQuery, k, flags);
-      logUsing(it.get(), "RkNN", q != null);
-      if(q != null) {
-        return q;
+    flags ^= masked; // Restore
+    if((flags & FLAG_LINEAR_ONLY) == 0) {
+      for(It<RKNNIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(RKNNIndex.class); it.valid(); it.advance()) {
+        RKNNSearcher<O> q = it.get().rkNNByObject(distanceQuery, k, flags);
+        logUsing(it.get(), "RkNN", q != null);
+        if(q != null) {
+          return q;
+        }
       }
-    }
-
-    // Use optimizer
-    if((flags & FLAGS_NO_OPTIMIZER) == 0) {
-      RKNNSearcher<O> q = OPTIMIZER.rkNNByObject(relation, distanceQuery, k, flags);
-      if(q != null) {
-        return q;
+      // Use optimizer
+      if((flags & FLAGS_NO_OPTIMIZER) == 0) {
+        RKNNSearcher<O> q = OPTIMIZER.rkNNByObject(relation, distanceQuery, k, flags);
+        if(q != null) {
+          return q;
+        }
       }
     }
     if((flags & FLAG_OPTIMIZED_ONLY) != 0) {
@@ -683,23 +711,24 @@ public class QueryBuilder<O> {
    * @return rkNN query
    */
   public RKNNSearcher<DBIDRef> rKNNByDBID(int k) {
-    int precompute = flags & FLAG_PRECOMPUTE;
-    flags ^= precompute; // Mask
+    int masked = flags & (FLAG_PRECOMPUTE | FLAG_OPTIMIZED_ONLY);
+    flags ^= masked; // Mask
     DistanceQuery<O> distanceQuery = distanceQuery();
-    flags ^= precompute; // Restore
-    for(It<RKNNIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(RKNNIndex.class); it.valid(); it.advance()) {
-      RKNNSearcher<DBIDRef> q = it.get().rkNNByDBID(distanceQuery, k, flags);
-      logUsing(it.get(), "RkNN", q != null);
-      if(q != null) {
-        return q;
+    flags ^= masked; // Restore
+    if((flags & FLAG_LINEAR_ONLY) == 0) {
+      for(It<RKNNIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(RKNNIndex.class); it.valid(); it.advance()) {
+        RKNNSearcher<DBIDRef> q = it.get().rkNNByDBID(distanceQuery, k, flags);
+        logUsing(it.get(), "RkNN", q != null);
+        if(q != null) {
+          return q;
+        }
       }
-    }
-
-    // Use optimizer
-    if((flags & FLAGS_NO_OPTIMIZER) == 0) {
-      RKNNSearcher<DBIDRef> q = OPTIMIZER.rkNNByDBID(relation, distanceQuery, k, flags);
-      if(q != null) {
-        return q;
+      // Use optimizer
+      if((flags & FLAGS_NO_OPTIMIZER) == 0) {
+        RKNNSearcher<DBIDRef> q = OPTIMIZER.rkNNByDBID(relation, distanceQuery, k, flags);
+        if(q != null) {
+          return q;
+        }
       }
     }
     if((flags & FLAG_OPTIMIZED_ONLY) != 0) {
@@ -726,23 +755,24 @@ public class QueryBuilder<O> {
    */
   @SuppressWarnings("unchecked")
   public PrioritySearcher<O> priorityByObject(double maxrange) {
-    int precompute = flags & FLAG_PRECOMPUTE;
-    flags ^= precompute; // Mask
+    int masked = flags & (FLAG_PRECOMPUTE | FLAG_OPTIMIZED_ONLY);
+    flags ^= masked; // Mask
     DistanceQuery<O> distanceQuery = distanceQuery();
-    flags ^= precompute; // Restore
-    for(It<DistancePriorityIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(DistancePriorityIndex.class); it.valid(); it.advance()) {
-      PrioritySearcher<O> q = it.get().priorityByObject(distanceQuery, maxrange, flags);
-      logUsing(it.get(), "priority", q != null);
-      if(q != null) {
-        return q;
+    flags ^= masked; // Restore
+    if((flags & FLAG_LINEAR_ONLY) == 0) {
+      for(It<DistancePriorityIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(DistancePriorityIndex.class); it.valid(); it.advance()) {
+        PrioritySearcher<O> q = it.get().priorityByObject(distanceQuery, maxrange, flags);
+        logUsing(it.get(), "priority", q != null);
+        if(q != null) {
+          return q;
+        }
       }
-    }
-
-    // Use optimizer
-    if((flags & FLAGS_NO_OPTIMIZER) == 0) {
-      PrioritySearcher<O> q = OPTIMIZER.priorityByObject(relation, distanceQuery, maxrange, flags);
-      if(q != null) {
-        return q;
+      // Use optimizer
+      if((flags & FLAGS_NO_OPTIMIZER) == 0) {
+        PrioritySearcher<O> q = OPTIMIZER.priorityByObject(relation, distanceQuery, maxrange, flags);
+        if(q != null) {
+          return q;
+        }
       }
     }
     if((flags & FLAG_OPTIMIZED_ONLY) != 0) {
@@ -773,23 +803,24 @@ public class QueryBuilder<O> {
    */
   @SuppressWarnings("unchecked")
   public PrioritySearcher<DBIDRef> priorityByDBID(double maxrange) {
-    int precompute = flags & FLAG_PRECOMPUTE;
-    flags ^= precompute; // Mask
+    int masked = flags & (FLAG_PRECOMPUTE | FLAG_OPTIMIZED_ONLY);
+    flags ^= masked; // Mask
     DistanceQuery<O> distanceQuery = distanceQuery();
-    flags ^= precompute; // Restore
-    for(It<DistancePriorityIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(DistancePriorityIndex.class); it.valid(); it.advance()) {
-      PrioritySearcher<DBIDRef> q = it.get().priorityByDBID(distanceQuery, maxrange, flags);
-      logUsing(it.get(), "priority", q != null);
-      if(q != null) {
-        return q;
+    flags ^= masked; // Restore
+    if((flags & FLAG_LINEAR_ONLY) == 0) {
+      for(It<DistancePriorityIndex<O>> it = Metadata.hierarchyOf(relation).iterChildrenReverse().filter(DistancePriorityIndex.class); it.valid(); it.advance()) {
+        PrioritySearcher<DBIDRef> q = it.get().priorityByDBID(distanceQuery, maxrange, flags);
+        logUsing(it.get(), "priority", q != null);
+        if(q != null) {
+          return q;
+        }
       }
-    }
-
-    // Use optimizer
-    if((flags & FLAGS_NO_OPTIMIZER) == 0) {
-      PrioritySearcher<DBIDRef> q = OPTIMIZER.priorityByDBID(relation, distanceQuery, maxrange, flags);
-      if(q != null) {
-        return q;
+      // Use optimizer
+      if((flags & FLAGS_NO_OPTIMIZER) == 0) {
+        PrioritySearcher<DBIDRef> q = OPTIMIZER.priorityByDBID(relation, distanceQuery, maxrange, flags);
+        if(q != null) {
+          return q;
+        }
       }
     }
     if((flags & FLAG_OPTIMIZED_ONLY) != 0) {

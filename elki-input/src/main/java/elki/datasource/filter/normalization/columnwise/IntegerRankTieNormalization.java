@@ -38,7 +38,7 @@ import it.unimi.dsi.fastutil.ints.IntComparator;
  * Normalize vectors according to their rank in the attributes.
  * <p>
  * Note: <b>ranks are multiplied by 2</b>, to be able to give ties an integer
- * rank. (e.g. when the first two records are tied, they both have rank "1"
+ * rank. (e.g., when the first two records are tied, they both have rank "1"
  * then, followed by the next on "4")
  * 
  * @author Erich Schubert
@@ -74,7 +74,7 @@ public class IntegerRankTieNormalization implements ObjectFilter {
       final List<? extends NumberVector> castColumn = (List<? extends NumberVector>) column;
       // Get the replacement type information
       final int dim = ((VectorFieldTypeInformation<?>) type).getDimensionality();
-      final VectorFieldTypeInformation<IntegerVector> outType = new VectorFieldTypeInformation<>(IntegerVector.STATIC, dim);
+      final VectorFieldTypeInformation<IntegerVector> outType = new VectorFieldTypeInformation<>(IntegerVector.FACTORY, dim);
 
       // Output vectors
       int[][] posvecs = new int[len][dim];

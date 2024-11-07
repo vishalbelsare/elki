@@ -39,8 +39,6 @@ import elki.utilities.optionhandling.parameters.IntParameter;
 import elki.utilities.optionhandling.parameters.ObjectParameter;
 import elki.utilities.random.RandomFactory;
 
-import net.jafama.FastMath;
-
 /**
  * Initialize K-means by following tree paths weighted by their variance
  * contribution. This is the strategy denoted "tree" in the reference.
@@ -59,7 +57,7 @@ import net.jafama.FastMath;
     title = "BETULA: Fast Clustering of Large Data with Improved BIRCH CF-Trees", //
     booktitle = "Information Systems", //
     url = "https://doi.org/10.1016/j.is.2021.101918", //
-    bibkey = "DBLP:journals/is/LangS21")
+    bibkey = "DBLP:journals/is/LangS22")
 public class CFKPlusPlusTree extends AbstractCFKMeansInitialization {
   /**
    * Distance function to use for initial means
@@ -96,7 +94,7 @@ public class CFKPlusPlusTree extends AbstractCFKMeansInitialization {
     if(tree.numLeaves() < k) {
       throw new IllegalArgumentException("Cannot choose k=" + k + " means from N=" + tree.numLeaves() + " < k objects.");
     }
-    maxdepth = maxdepth > 0 ? maxdepth : (int) Math.ceil(FastMath.log(k) / FastMath.log(tree.getCapacity())) + 1;
+    maxdepth = maxdepth > 0 ? maxdepth : (int) Math.ceil(Math.log(k) / Math.log(tree.getCapacity())) + 1;
     List<ClusterFeature> ccs = new ArrayList<>(k);
     Random rnd = rf.getSingleThreadedRandom();
     // Choose first

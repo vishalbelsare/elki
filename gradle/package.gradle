@@ -52,13 +52,13 @@ subprojects {
   }
   // Build source jars:
   task sourceJar(type: Jar) {
-    classifier = 'sources'
+    archiveClassifier = 'sources'
     from sourceSets.main.allSource
   }
   artifacts.archives sourceJar
   // Build javadoc jars:
   task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    archiveClassifier = 'javadoc'
     from javadoc.destinationDir
   }
   artifacts.archives javadocJar
@@ -86,7 +86,7 @@ configure(subprojects.findAll { isSnapshot || !project.hasProperty("signing.gnup
     // Add the sonatype data to gradle.properties!
     if (project.hasProperty("sonatypeUsername")) { repositories {
       maven {
-        url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+        url "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2"
         credentials {
           username sonatypeUsername
           password sonatypePassword

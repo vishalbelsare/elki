@@ -23,11 +23,11 @@ package elki.distance.minkowski;
 import elki.data.SparseNumberVector;
 import elki.data.type.SimpleTypeInformation;
 import elki.distance.Norm;
-import elki.distance.PrimitiveDistance;
 import elki.utilities.optionhandling.Parameterizer;
 import elki.utilities.optionhandling.constraints.CommonConstraints;
 import elki.utilities.optionhandling.parameterization.Parameterization;
 import elki.utilities.optionhandling.parameters.DoubleParameter;
+
 import net.jafama.FastMath;
 
 /**
@@ -40,7 +40,7 @@ import net.jafama.FastMath;
  * @since 0.5.0
  */
 // TODO: implement SpatialDistance
-public class SparseLPNormDistance implements PrimitiveDistance<SparseNumberVector>, Norm<SparseNumberVector> {
+public class SparseLPNormDistance implements Norm<SparseNumberVector> {
   /**
    * Parameter and its inverse.
    */
@@ -48,6 +48,8 @@ public class SparseLPNormDistance implements PrimitiveDistance<SparseNumberVecto
 
   /**
    * Constructor.
+   * 
+   * @param p Power parameter
    */
   public SparseLPNormDistance(double p) {
     super();
@@ -114,7 +116,7 @@ public class SparseLPNormDistance implements PrimitiveDistance<SparseNumberVecto
 
   @Override
   public boolean isMetric() {
-    return (p >= 1.);
+    return p >= 1.;
   }
 
   /**
@@ -137,16 +139,10 @@ public class SparseLPNormDistance implements PrimitiveDistance<SparseNumberVecto
 
     @Override
     public SparseLPNormDistance make() {
-      if(p == 2.) {
-        return SparseEuclideanDistance.STATIC;
-      }
-      if(p == 1.) {
-        return SparseManhattanDistance.STATIC;
-      }
-      if(p == Double.POSITIVE_INFINITY) {
-        return SparseMaximumDistance.STATIC;
-      }
-      return new SparseLPNormDistance(p);
+      return p == 2. ? SparseEuclideanDistance.STATIC : //
+          p == 1. ? SparseManhattanDistance.STATIC : //
+              p == Double.POSITIVE_INFINITY ? SparseMaximumDistance.STATIC : //
+                  new SparseLPNormDistance(p);
     }
   }
 }

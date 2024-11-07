@@ -40,7 +40,6 @@ import elki.utilities.datastructures.arraylike.DoubleArray;
 import elki.utilities.datastructures.arraylike.IntegerArray;
 import elki.utilities.documentation.Reference;
 import elki.utilities.documentation.Title;
-import elki.utilities.exceptions.AbortException;
 import elki.utilities.optionhandling.OptionID;
 import elki.utilities.optionhandling.parameterization.Parameterization;
 import elki.utilities.optionhandling.parameters.ObjectParameter;
@@ -100,15 +99,12 @@ public class IntrinsicNearestNeighborAffinityMatrixBuilder<O> extends NearestNei
 
   @Override
   public <T extends O> AffinityMatrix computeAffinityMatrix(Relation<T> relation, double initialScale) {
-    final int numberOfNeighbours = (int) FastMath.ceil(3 * perplexity);
+    final int numberOfNeighbours = (int) Math.ceil(3 * perplexity);
     KNNSearcher<DBIDRef> knnq = new QueryBuilder<>(relation, distance).kNNByDBID(numberOfNeighbours + 1);
     if(knnq instanceof LinearScanQuery && numberOfNeighbours * numberOfNeighbours < relation.size()) {
       LOG.warning("To accelerate Barnes-Hut tSNE, please use an index.");
     }
-    if(!(relation.getDBIDs() instanceof DBIDRange)) {
-      throw new AbortException("Distance matrixes are currently only supported for DBID ranges (as used by static databases) for performance reasons (Patches welcome).");
-    }
-    DBIDRange rids = (DBIDRange) relation.getDBIDs();
+    DBIDEnum rids = DBIDUtil.ensureEnum(relation.getDBIDs());
     final int size = rids.size();
     // Sparse affinity graph
     double[][] pij = new double[size][];
@@ -130,9 +126,10 @@ public class IntrinsicNearestNeighborAffinityMatrixBuilder<O> extends NearestNei
    * @param indices Output of indexes
    * @param initialScale Initial scaling factor
    */
-  protected void computePij(DBIDRange ids, KNNSearcher<DBIDRef> knnq, boolean square, int numberOfNeighbours, double[][] pij, int[][] indices, double initialScale) {
+  @Override
+  protected void computePij(DBIDEnum ids, KNNSearcher<DBIDRef> knnq, boolean square, int numberOfNeighbours, double[][] pij, int[][] indices, double initialScale) {
     Duration timer = LOG.newDuration(this.getClass().getName() + ".runtime.neighborspijmatrix").begin();
-    final double logPerp = FastMath.log(perplexity);
+    final double logPerp = Math.log(perplexity);
     // Scratch arrays, resizable
     DoubleArray dists = new DoubleArray(numberOfNeighbours + 10);
     IntegerArray inds = new IntegerArray(numberOfNeighbours + 10);
@@ -215,13 +212,13 @@ public class IntrinsicNearestNeighborAffinityMatrixBuilder<O> extends NearestNei
    * @param ind Output index array
    * @param m Mean id, for statistics.
    */
-  protected void convertNeighbors(DBIDRange ids, DBIDRef ix, boolean square, KNNList neighbours, DoubleArray dist, IntegerArray ind, Mean m) {
+  protected void convertNeighbors(DBIDEnum ids, DBIDRef ix, boolean square, KNNList neighbours, DoubleArray dist, IntegerArray ind, Mean m) {
     for(DoubleDBIDListIter iter = neighbours.iter(); iter.valid(); iter.advance()) {
       if(DBIDUtil.equal(iter, ix)) {
         continue; // Skip query point
       }
       dist.add(iter.doubleValue());
-      ind.add(ids.getOffset(iter));
+      ind.add(ids.index(iter));
     }
     double id = estimator.estimate(dist.data, dist.size);
     if(m != null) {

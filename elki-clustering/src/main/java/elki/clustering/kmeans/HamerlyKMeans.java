@@ -26,15 +26,11 @@ import elki.clustering.kmeans.initialization.KMeansInitialization;
 import elki.data.Clustering;
 import elki.data.NumberVector;
 import elki.data.model.KMeansModel;
-import elki.database.datastore.DataStoreFactory;
-import elki.database.datastore.DataStoreUtil;
-import elki.database.datastore.WritableDoubleDataStore;
 import elki.database.ids.DBIDIter;
 import elki.database.relation.Relation;
 import elki.distance.NumberVectorDistance;
 import elki.logging.Logging;
 import elki.utilities.documentation.Reference;
-import elki.utilities.optionhandling.parameterization.Parameterization;
 
 /**
  * Hamerly's fast k-means by exploiting the triangle inequality.
@@ -57,16 +53,11 @@ import elki.utilities.optionhandling.parameterization.Parameterization;
     booktitle = "Proc. 2010 SIAM International Conference on Data Mining", //
     url = "https://doi.org/10.1137/1.9781611972801.12", //
     bibkey = "DBLP:conf/sdm/Hamerly10")
-public class HamerlyKMeans<V extends NumberVector> extends AbstractKMeans<V, KMeansModel> {
+public class HamerlyKMeans<V extends NumberVector> extends SimplifiedHamerlyKMeans<V> {
   /**
    * The logger for this class.
    */
   private static final Logging LOG = Logging.getLogger(HamerlyKMeans.class);
-
-  /**
-   * Flag whether to compute the final variance statistic.
-   */
-  protected boolean varstat = false;
 
   /**
    * Constructor.
@@ -78,8 +69,7 @@ public class HamerlyKMeans<V extends NumberVector> extends AbstractKMeans<V, KMe
    * @param varstat Compute the variance statistic
    */
   public HamerlyKMeans(NumberVectorDistance<? super V> distance, int k, int maxiter, KMeansInitialization initializer, boolean varstat) {
-    super(distance, k, maxiter, initializer);
-    this.varstat = varstat;
+    super(distance, k, maxiter, initializer, varstat);
   }
 
   @Override
@@ -94,32 +84,7 @@ public class HamerlyKMeans<V extends NumberVector> extends AbstractKMeans<V, KMe
    *
    * @author Erich Schubert
    */
-  protected static class Instance extends AbstractKMeans.Instance {
-    /**
-     * Sum aggregate for the new mean.
-     */
-    double[][] sums;
-
-    /**
-     * Scratch space for new means.
-     */
-    double[][] newmeans;
-
-    /**
-     * Upper bounds
-     */
-    WritableDoubleDataStore upper;
-
-    /**
-     * Lower bounds
-     */
-    WritableDoubleDataStore lower;
-
-    /**
-     * Separation of means / distance moved.
-     */
-    double[] sep;
-
+  protected static class Instance extends SimplifiedHamerlyKMeans.Instance {
     /**
      * Constructor.
      *
@@ -129,31 +94,9 @@ public class HamerlyKMeans<V extends NumberVector> extends AbstractKMeans<V, KMe
      */
     public Instance(Relation<? extends NumberVector> relation, NumberVectorDistance<?> df, double[][] means) {
       super(relation, df, means);
-      upper = DataStoreUtil.makeDoubleStorage(relation.getDBIDs(), DataStoreFactory.HINT_TEMP | DataStoreFactory.HINT_HOT, Double.POSITIVE_INFINITY);
-      lower = DataStoreUtil.makeDoubleStorage(relation.getDBIDs(), DataStoreFactory.HINT_TEMP | DataStoreFactory.HINT_HOT, 0.);
-      final int dim = means[0].length;
-      sums = new double[k][dim];
-      newmeans = new double[k][dim];
-      sep = new double[k];
     }
 
     @Override
-    protected int iterate(int iteration) {
-      if(iteration == 1) {
-        return initialAssignToNearestCluster();
-      }
-      meansFromSums(newmeans, sums, means);
-      movedDistance(means, newmeans, sep);
-      updateBounds(sep);
-      copyMeans(newmeans, means);
-      return assignToNearestCluster();
-    }
-
-    /**
-     * Perform initial cluster assignment.
-     *
-     * @return Number of changes (i.e., relation size)
-     */
     protected int initialAssignToNearestCluster() {
       assert k == means.length;
       double[][] cdist = new double[k][k];
@@ -269,32 +212,6 @@ public class HamerlyKMeans<V extends NumberVector> extends AbstractKMeans<V, KMe
       }
     }
 
-    /**
-     * Update the bounds for k-means.
-     *
-     * @param move Movement of centers
-     */
-    protected void updateBounds(double[] move) {
-      // Find the maximum and second largest movement.
-      int most = 0;
-      double delta = move[0], delta2 = 0;
-      for(int i = 1; i < move.length; i++) {
-        final double m = move[i];
-        if(m > delta) {
-          delta2 = delta;
-          delta = move[most = i];
-        }
-        else if(m > delta2) {
-          delta2 = m;
-        }
-      }
-      for(DBIDIter it = relation.iterDBIDs(); it.valid(); it.advance()) {
-        final int a = assignment.intValue(it);
-        upper.increment(it, move[a]);
-        lower.increment(it, a == most ? -delta2 : -delta);
-      }
-    }
-
     @Override
     protected Logging getLogger() {
       return LOG;
@@ -311,18 +228,7 @@ public class HamerlyKMeans<V extends NumberVector> extends AbstractKMeans<V, KMe
    *
    * @author Erich Schubert
    */
-  public static class Par<V extends NumberVector> extends AbstractKMeans.Par<V> {
-    @Override
-    protected boolean needsMetric() {
-      return true;
-    }
-
-    @Override
-    public void configure(Parameterization config) {
-      super.configure(config);
-      super.getParameterVarstat(config);
-    }
-
+  public static class Par<V extends NumberVector> extends SimplifiedHamerlyKMeans.Par<V> {
     @Override
     public HamerlyKMeans<V> make() {
       return new HamerlyKMeans<>(distance, k, maxiter, initializer, varstat);

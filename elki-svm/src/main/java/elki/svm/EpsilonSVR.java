@@ -1,3 +1,23 @@
+/*
+ * This file is part of ELKI:
+ * Environment for Developing KDD-Applications Supported by Index-Structures
+ * 
+ * Copyright (C) 2022
+ * ELKI Development Team
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package elki.svm;
 
 import java.util.Arrays;
@@ -8,13 +28,37 @@ import elki.svm.qmatrix.QMatrix;
 import elki.svm.qmatrix.SVR_Q;
 import elki.svm.solver.Solver;
 
+/**
+ * Epsilon Support Vector Regression Machine with epsilon-insensitive loss function.
+ */
 public class EpsilonSVR extends AbstractSVR {
+  /**
+   * Class logger
+   */
   private static final Logging LOG = Logging.getLogger(EpsilonSVR.class);
 
-  protected double p, C;
+  /**
+   * Epsilon in epsilon-loss function
+   */
+  protected double p;
+  
+  /**
+   * Regularization parameter
+   */
+  protected double C;
 
-  public EpsilonSVR(double eps, boolean shrinking, double cache_size, double C, double p) {
-    super(eps, shrinking, cache_size);
+  /**
+   * Constructor.
+   * 
+   * @param tol Optimizer tolerance
+   * @param shrinking Use shrinking
+   * @param cache_size Cache size
+   * @param C Regularization parameter
+   * @param p Epsilon in epsilon-loss function
+   * @param probability Estimate probabilities
+   */
+  public EpsilonSVR(double tol, boolean shrinking, double cache_size, double C, double p, boolean probability) {
+    super(tol, shrinking, cache_size, probability);
     this.p = p;
     this.C = C;
   }
@@ -34,7 +78,7 @@ public class EpsilonSVR extends AbstractSVR {
 
     QMatrix Q = new SVR_Q(x, cache_size);
     Q.initialize();
-    Solver.SolutionInfo si = new Solver().solve(l2, Q, linear_term, y, alpha2, C, C, eps, shrinking);
+    Solver.SolutionInfo si = new Solver().solve(l2, Q, linear_term, y, alpha2, C, C, tol, shrinking);
 
     // Update alpha
     double sum_alpha = 0;

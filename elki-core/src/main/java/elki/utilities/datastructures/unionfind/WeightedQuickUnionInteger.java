@@ -76,6 +76,8 @@ public class WeightedQuickUnionInteger {
 
   /**
    * Constructor.
+   * 
+   * @param size Initial size
    */
   public WeightedQuickUnionInteger(int size) {
     weight = new int[size];
@@ -166,6 +168,16 @@ public class WeightedQuickUnionInteger {
       }
     }
     return roots;
+  }
+
+  /**
+   * Get the weight of a component.
+   * 
+   * @param component id
+   * @return Weight
+   */
+  public int size(int component) {
+    return weight[component];
   }
 
   /**

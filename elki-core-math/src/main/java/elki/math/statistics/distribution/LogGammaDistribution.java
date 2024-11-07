@@ -134,10 +134,12 @@ public class LogGammaDistribution implements Distribution {
 
   /**
    * The CDF, static version.
+   * * @param shift Shift parameter
    * 
    * @param x Value
    * @param k Shape k
    * @param theta Theta = 1.0/Beta aka. "scaling" parameter
+   * @param shift Location parameter
    * @return cdf value
    */
   public static double cdf(double x, double k, double theta, double shift) {
@@ -151,6 +153,7 @@ public class LogGammaDistribution implements Distribution {
    * @param x Value
    * @param k Shape k
    * @param theta Theta = 1.0/Beta aka. "scaling" parameter
+   * @param shift Location parameter
    * @return cdf value
    */
   public static double logcdf(double x, double k, double theta, double shift) {
@@ -164,6 +167,7 @@ public class LogGammaDistribution implements Distribution {
    * @param x query value
    * @param k Alpha
    * @param theta Theta = 1 / Beta
+   * @param shift Location parameter
    * @return probability density
    */
   public static double pdf(double x, double k, double theta, double shift) {
@@ -177,6 +181,7 @@ public class LogGammaDistribution implements Distribution {
    * @param x query value
    * @param k Alpha
    * @param theta Theta = 1 / Beta
+   * @param shift Location parameter
    * @return log probability density
    */
   public static double logpdf(double x, double k, double theta, double shift) {
@@ -185,7 +190,7 @@ public class LogGammaDistribution implements Distribution {
       return Double.NEGATIVE_INFINITY;
     }
     final double log1px = FastMath.log1p(x);
-    return k * FastMath.log(theta) - GammaDistribution.logGamma(k) - (theta + 1.) * log1px + (k - 1) * FastMath.log(log1px);
+    return k * Math.log(theta) - GammaDistribution.logGamma(k) - (theta + 1.) * log1px + (k - 1) * Math.log(log1px);
   }
 
   /**
@@ -194,7 +199,7 @@ public class LogGammaDistribution implements Distribution {
    * @param p Probability
    * @param k k, alpha aka. "shape" parameter
    * @param theta Theta = 1.0/Beta aka. "scaling" parameter
-   * @param shift Shift parameter
+   * @param shift Location parameter
    * @return Probit for Gamma distribution
    */
   public static double quantile(double p, double k, double theta, double shift) {

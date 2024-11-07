@@ -112,6 +112,7 @@ public class MiniMax<O> implements HierarchicalClusteringAlgorithm {
   /**
    * Initializes the inter-cluster distance matrix of possible merges
    * 
+   * @param <O> Object type
    * @param ids Object ids
    * @param prots Prototype storage
    * @param dq The distance query
@@ -172,6 +173,16 @@ public class MiniMax<O> implements HierarchicalClusteringAlgorithm {
       throw new IllegalStateException("Need prototypes.");
     }
 
+    /**
+     * Run the clustering algorithm.
+     * 
+     * @param ids Object ids
+     * @param mat Cluster distance matrix
+     * @param builder Merge history builder
+     * @param dq Distance query
+     * @param prots Prototype storage
+     * @return Cluster merge history
+     */
     public ClusterPrototypeMergeHistory run(ArrayDBIDs ids, ClusterDistanceMatrix mat, ClusterMergeHistoryBuilder builder, DistanceQuery<?> dq, DBIDArrayMIter prots) {
       final int size = mat.size;
       this.mat = mat;
@@ -191,11 +202,7 @@ public class MiniMax<O> implements HierarchicalClusteringAlgorithm {
       return (ClusterPrototypeMergeHistory) builder.complete();
     }
 
-    /**
-     * Find the best merge.
-     * 
-     * @return x, for shrinking the working set.
-     */
+    @Override
     protected int findMerge() {
       final double[] distances = mat.matrix;
       double mindist = Double.POSITIVE_INFINITY;

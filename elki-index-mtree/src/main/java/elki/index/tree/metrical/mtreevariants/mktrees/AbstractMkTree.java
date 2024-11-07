@@ -20,9 +20,10 @@
  */
 package elki.index.tree.metrical.mtreevariants.mktrees;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import elki.database.datastore.DataStore;
+import elki.database.datastore.DataStoreFactory;
+import elki.database.datastore.DataStoreUtil;
+import elki.database.datastore.WritableDataStore;
 import elki.database.ids.*;
 import elki.database.query.distance.DistanceQuery;
 import elki.database.query.knn.KNNSearcher;
@@ -100,15 +101,15 @@ public abstract class AbstractMkTree<O, N extends AbstractMTreeNode<O, N, E>, E 
    *        performed
    * @param ids the ids of the query objects
    * @param kmax Maximum k value
+   * @return Map to query results
    * 
    * @deprecated Change to use by-object NN lookups instead.
    */
   @Deprecated
-  protected final Map<DBID, KNNList> batchNN(N node, DBIDs ids, int kmax) {
-    Map<DBID, KNNList> res = new HashMap<>(ids.size());
+  protected final DataStore<KNNList> batchNN(N node, DBIDs ids, int kmax) {
+    WritableDataStore<KNNList> res = DataStoreUtil.makeStorage(ids, DataStoreFactory.HINT_TEMP, KNNList.class);
     for(DBIDIter iter = ids.iter(); iter.valid(); iter.advance()) {
-      DBID id = DBIDUtil.deref(iter);
-      res.put(id, knnq.getKNN(id, kmax));
+      res.put(iter, knnq.getKNN(iter, kmax));
     }
     return res;
   }

@@ -27,20 +27,21 @@ import elki.clustering.kmedoids.initialization.KMedoidsInitialization;
 import elki.clustering.kmedoids.initialization.KMedoidsKMedoidsInitialization;
 import elki.data.Clustering;
 import elki.data.model.MedoidModel;
-import elki.database.datastore.DataStoreFactory;
-import elki.database.datastore.DataStoreUtil;
-import elki.database.datastore.IntegerDataStore;
-import elki.database.datastore.WritableIntegerDataStore;
+import elki.database.datastore.*;
 import elki.database.ids.*;
-import elki.database.query.QueryBuilder;
 import elki.database.query.distance.DistanceQuery;
+import elki.database.relation.MaterializedDoubleRelation;
 import elki.database.relation.Relation;
 import elki.distance.Distance;
+import elki.evaluation.clustering.internal.Silhouette;
 import elki.logging.Logging;
 import elki.logging.progress.IndefiniteProgress;
 import elki.logging.statistics.DoubleStatistic;
+import elki.logging.statistics.Duration;
 import elki.logging.statistics.LongStatistic;
+import elki.result.EvaluationResult;
 import elki.result.Metadata;
+import elki.result.EvaluationResult.MeasurementGroup;
 import elki.utilities.documentation.Reference;
 import elki.utilities.exceptions.AbortException;
 
@@ -96,22 +97,22 @@ public class PAMSIL<O> extends PAM<O> {
     super(distance, k, maxiter, initializer);
   }
 
-  /**
-   * Run PAMSIL
-   *
-   * @param relation relation to use
-   * @return result
-   */
   @Override
-  public Clustering<MedoidModel> run(Relation<O> relation) {
-    Clustering<MedoidModel> result = run(relation, k, new QueryBuilder<>(relation, distance).precomputed().distanceQuery());
-    Metadata.of(result).setLongName("PAMSIL Clustering");
-    return result;
-  }
-
-  @Override
-  protected void run(DistanceQuery<? super O> distQ, DBIDs ids, ArrayModifiableDBIDs medoids, WritableIntegerDataStore assignment) {
-    new Instance(distQ, ids, assignment).run(medoids, maxiter);
+  public Clustering<MedoidModel> run(Relation<O> relation, int k, DistanceQuery<? super O> distQ) {
+    DBIDs ids = relation.getDBIDs();
+    ArrayModifiableDBIDs medoids = initialMedoids(distQ, ids, k);
+    WritableIntegerDataStore assignment = DataStoreUtil.makeIntegerStorage(ids, DataStoreFactory.HINT_HOT | DataStoreFactory.HINT_TEMP, -1);
+    Duration optd = getLogger().newDuration(getClass().getName() + ".optimization-time").begin();
+    Instance instance = new Instance(distQ, ids, assignment);
+    double sil = instance.run(medoids, maxiter);
+    DoubleDataStore silhouettes = instance.silhouetteScores();
+    getLogger().statistics(optd.end());
+    Clustering<MedoidModel> res = wrapResult(ids, assignment, medoids, "PAMSIL Clustering");
+    Metadata.hierarchyOf(res).addChild(new MaterializedDoubleRelation(Silhouette.SILHOUETTE_NAME, ids, silhouettes));
+    EvaluationResult ev = EvaluationResult.findOrCreate(res, "Internal Clustering Evaluation");
+    MeasurementGroup g = ev.findOrCreateGroup("Distance-based");
+    g.addMeasure("Silhouette", sil, -1., 1., 0., false);
+    return res;
   }
 
   /**
@@ -141,6 +142,11 @@ public class PAMSIL<O> extends PAM<O> {
     WritableIntegerDataStore scratch;
 
     /**
+     * Store the per-point silhouette scores for plotting.
+     */
+    WritableDoubleDataStore silhouettes;
+
+    /**
      * Constructor.
      *
      * @param distQ Distance query
@@ -152,6 +158,7 @@ public class PAMSIL<O> extends PAM<O> {
       this.ids = ids;
       this.assignment = assignment;
       this.scratch = DataStoreUtil.makeIntegerStorage(ids, DataStoreFactory.HINT_HOT | DataStoreFactory.HINT_TEMP, -1);
+      this.silhouettes = DataStoreUtil.makeDoubleStorage(ids, DataStoreFactory.HINT_DB);
     }
 
     /**
@@ -276,7 +283,9 @@ public class PAMSIL<O> extends PAM<O> {
             b = !Double.isNaN(avg) && avg < b ? avg : b;
           }
         }
-        silsum += (b - a) / (a > b ? a : b);
+        final double s = (b - a) / (a > b ? a : b);
+        silhouettes.putDouble(x, s);
+        silsum += s;
       }
       return silsum / ids.size();
     }
@@ -315,6 +324,11 @@ public class PAMSIL<O> extends PAM<O> {
         }
         assignment.put(iditer, minindx);
       }
+    }
+
+    /** @return get the silhouette scores */
+    public DoubleDataStore silhouetteScores() {
+      return silhouettes;
     }
   }
 

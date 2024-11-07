@@ -125,6 +125,7 @@ public class ERiC implements ClusteringAlgorithm<Clustering<CorrelationModel>> {
   /**
    * Performs the ERiC algorithm on the given database.
    * 
+   * @param database Datebase to process
    * @param relation Relation to process
    * @return Clustering result
    */
@@ -135,9 +136,8 @@ public class ERiC implements ClusteringAlgorithm<Clustering<CorrelationModel>> {
 
     // Run Generalized DBSCAN
     LOG.beginStep(stepprog, 1, "Preprocessing local correlation dimensionalities and partitioning data");
-    // FIXME: how to ensure we are running on the same relation?
     ERiCNeighborPredicate.Instance npred = new ERiCNeighborPredicate(settings).instantiate(relation);
-    CorePredicate.Instance<DBIDs> cpred = new MinPtsCorePredicate(settings.minpts).instantiate(database);
+    CorePredicate.Instance<DBIDs> cpred = new MinPtsCorePredicate(settings.minpts).instantiate();
     Clustering<Model> copacResult = new GeneralizedDBSCAN.Instance<>(npred, cpred, false).run();
 
     // extract correlation clusters
@@ -273,6 +273,13 @@ public class ERiC implements ClusteringAlgorithm<Clustering<CorrelationModel>> {
     return clusterMap;
   }
 
+  /**
+   * Build the cluster hierarchy
+   * 
+   * @param clustering Clustering output
+   * @param clusterMap Cluster map
+   * @param npred Neighbor predicate
+   */
   private void buildHierarchy(Clustering<CorrelationModel> clustering, List<List<Cluster<CorrelationModel>>> clusterMap, ERiCNeighborPredicate.Instance npred) {
     StringBuilder msg = LOG.isDebuggingFine() ? new StringBuilder() : null;
     Hierarchy<Cluster<CorrelationModel>> hier = clustering.getClusterHierarchy();

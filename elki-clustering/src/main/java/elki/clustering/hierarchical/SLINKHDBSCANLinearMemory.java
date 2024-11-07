@@ -49,8 +49,8 @@ import elki.utilities.documentation.Reference;
  * <p>
  * This implementation does <em>not</em> include the cluster extraction
  * discussed as Step 4. This functionality should however already be provided by
- * {@link elki.clustering.hierarchical.extraction.HDBSCANHierarchyExtraction}
- * . For this reason, we also do <em>not include self-edges</em>.
+ * {@link elki.clustering.hierarchical.extraction.HDBSCANHierarchyExtraction}.
+ * For this reason, we also do <em>not include self-edges</em>.
  * <p>
  * Reference:
  * <p>
@@ -140,6 +140,7 @@ public class SLINKHDBSCANLinearMemory<O> extends AbstractHDBSCAN<O> implements H
    *        representation
    * @param processedIDs the already processed ids
    * @param distQuery Distance query
+   * @param coredists Core distances
    * @param m Data store
    */
   private void step2(DBIDRef id, DBIDs processedIDs, DistanceQuery<? super O> distQuery, DoubleDataStore coredists, WritableDoubleDataStore m) {

@@ -27,7 +27,6 @@ import elki.distance.minkowski.EuclideanDistance;
 import elki.index.tree.spatial.rstarvariants.AbstractRStarTreeFactory;
 import elki.persistent.PageFile;
 import elki.persistent.PageFileFactory;
-import elki.utilities.ClassGenericsUtil;
 import elki.utilities.optionhandling.OptionID;
 import elki.utilities.optionhandling.constraints.CommonConstraints;
 import elki.utilities.optionhandling.parameterization.Parameterization;
@@ -73,13 +72,9 @@ public class RdKNNTreeFactory<O extends NumberVector> extends AbstractRStarTreeF
 
   @Override
   public RdKNNTree<O> instantiate(Relation<O> relation) {
-    PageFile<RdKNNNode> pagefile = makePageFile(getNodeClass());
+    PageFile<RdKNNNode> pagefile = makePageFile(RdKNNNode.class);
     RdKNNTree<O> index = new RdKNNTree<>(relation, pagefile, settings);
     return index;
-  }
-
-  protected Class<RdKNNNode> getNodeClass() {
-    return ClassGenericsUtil.uglyCastIntoSubclass(RdKNNNode.class);
   }
 
   /**

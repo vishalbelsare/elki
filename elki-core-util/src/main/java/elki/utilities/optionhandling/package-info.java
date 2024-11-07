@@ -1,6 +1,5 @@
 /**
  * Parameter handling and option descriptions.
- * <p>
  * <ol>
  * <li><b>Option ID</b>: Any parameter <em>must</em> have an
  * {@link elki.utilities.optionhandling.OptionID OptionID}.<br>
@@ -205,7 +204,7 @@
  * TODO issue)
  * </li>
  * <li><b>Tracking parameterizations:</b>:
- * Sometimes (e.g. for help functions, re-running, configuration templates etc.)
+ * Sometimes (e.g., for help functions, re-running, configuration templates etc.)
  * it is required to track all parameters an (sub-) algorithm consumed. This can
  * be done using a
  * {@link elki.utilities.optionhandling.parameterization.TrackParameters

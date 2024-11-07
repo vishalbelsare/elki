@@ -92,6 +92,7 @@ public class KMeansMinusMinus<V extends NumberVector> extends AbstractKMeans<V, 
    * @param k k parameter
    * @param maxiter Maxiter parameter
    * @param initializer Initialization method
+   * @param rate Outlier rate (0 to 1)
    * @param noiseFlag Create a noise cluster instead of assigning to the nearest
    *        cluster
    */
@@ -172,6 +173,11 @@ public class KMeansMinusMinus<V extends NumberVector> extends AbstractKMeans<V, 
       return changed;
     }
 
+    /**
+     * Build the clustering result
+     * 
+     * @return Clustering result
+     */
     protected Clustering<KMeansModel> buildResultWithNoise() {
       // create noisecluster if wanted
       ModifiableDoubleDBIDList noiseids = null;
@@ -216,6 +222,7 @@ public class KMeansMinusMinus<V extends NumberVector> extends AbstractKMeans<V, 
      *
      * @return the number of reassigned objects
      */
+    @Override
     protected int assignToNearestCluster() {
       assert (k == means.length);
       int changed = 0;

@@ -106,7 +106,7 @@ public class TextbookMultivariateGaussianModel implements EMClusterModel<NumberV
     this.priormatrix = covariance != null ? covariance : null;
     this.wsum = 0.;
     this.chol = MultivariateGaussianModel.updateCholesky(this.covariance, null);
-    this.logNormDet = FastMath.log(weight) - .5 * logNorm - MultivariateGaussianModel.getHalfLogDeterminant(this.chol);
+    this.logNormDet = Math.log(weight) - .5 * logNorm - MultivariateGaussianModel.getHalfLogDeterminant(this.chol);
   }
 
   @Override
@@ -193,7 +193,7 @@ public class TextbookMultivariateGaussianModel implements EMClusterModel<NumberV
       }
     }
     this.chol = MultivariateGaussianModel.updateCholesky(covariance, null);
-    this.logNormDet = FastMath.log(weight) - .5 * logNorm - MultivariateGaussianModel.getHalfLogDeterminant(this.chol);
+    this.logNormDet = Math.log(weight) - .5 * logNorm - MultivariateGaussianModel.getHalfLogDeterminant(this.chol);
     if(prior > 0 && priormatrix == null) {
       priormatrix = copy(covariance);
     }
@@ -226,7 +226,7 @@ public class TextbookMultivariateGaussianModel implements EMClusterModel<NumberV
 
   @Override
   public EMModel finalizeCluster() {
-    return new EMModel(mean, covariance);
+    return new EMModel(mean, weight, covariance);
   }
 
   /**

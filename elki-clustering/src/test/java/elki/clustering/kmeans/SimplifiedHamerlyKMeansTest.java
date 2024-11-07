@@ -18,22 +18,30 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package elki.database.datastore;
+package elki.clustering.kmeans;
 
-import elki.database.ids.DBIDRef;
+import org.junit.Test;
+
+import elki.clustering.AbstractClusterAlgorithmTest;
+import elki.data.Clustering;
+import elki.data.DoubleVector;
+import elki.database.Database;
+import elki.utilities.ELKIBuilder;
 
 /**
- * Interface to map DBIDs to integer record ids for use in storage.
- * 
+ * Regression test for simplified Hamerly k-means.
+ *
  * @author Erich Schubert
- * @since 0.4.0
  */
-public interface DataStoreIDMap {
-  /**
-   * Map a DBID to an array offset.
-   * 
-   * @param dbid DBID
-   * @return record id {@code id >= 0}
-   */
-  int mapDBIDToOffset(DBIDRef dbid);
+public class SimplifiedHamerlyKMeansTest extends AbstractClusterAlgorithmTest {
+  @Test
+  public void testKMeansHamerly() {
+    Database db = makeSimpleDatabase(UNITTEST + "different-densities-2d-no-noise.ascii", 1000);
+    Clustering<?> result = new ELKIBuilder<SimplifiedHamerlyKMeans<DoubleVector>>(SimplifiedHamerlyKMeans.class) //
+        .with(KMeans.K_ID, 5) //
+        .with(KMeans.SEED_ID, 7) //
+        .build().autorun(db);
+    assertFMeasure(db, result, 0.998005);
+    assertClusterSizes(result, new int[] { 199, 200, 200, 200, 201 });
+  }
 }

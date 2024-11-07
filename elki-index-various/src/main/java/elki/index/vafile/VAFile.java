@@ -41,17 +41,16 @@ import elki.index.KNNIndex;
 import elki.index.RangeIndex;
 import elki.logging.Logging;
 import elki.logging.statistics.LongStatistic;
+import elki.math.MathUtil;
 import elki.persistent.AbstractPageFileFactory;
 import elki.utilities.datastructures.heap.DoubleMaxHeap;
 import elki.utilities.documentation.Reference;
 import elki.utilities.documentation.Title;
-import elki.utilities.optionhandling.Parameterizer;
 import elki.utilities.optionhandling.OptionID;
+import elki.utilities.optionhandling.Parameterizer;
 import elki.utilities.optionhandling.constraints.CommonConstraints;
 import elki.utilities.optionhandling.parameterization.Parameterization;
 import elki.utilities.optionhandling.parameters.IntParameter;
-
-import net.jafama.FastMath;
 
 /**
  * Vector-approximation file (VAFile)
@@ -141,10 +140,10 @@ public class VAFile<V extends NumberVector> extends AbstractRefiningIndex<V> imp
    * Initialize the data set grid by computing quantiles.
    * 
    * @param relation Data relation
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException on invalid number of partitions
    */
   public void setPartitions(Relation<V> relation) throws IllegalArgumentException {
-    if((FastMath.log(partitions) / FastMath.log(2)) != (int) (FastMath.log(partitions) / FastMath.log(2))) {
+    if((Math.log(partitions) * MathUtil.ONE_BY_LOG2) != (int) (Math.log(partitions) * MathUtil.ONE_BY_LOG2)) {
       throw new IllegalArgumentException("Number of partitions must be a power of 2!");
     }
 

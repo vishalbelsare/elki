@@ -223,6 +223,14 @@ public class ResultWindow extends JFrame implements ResultListener, Visualizatio
       menubar.repaint();
     }
 
+    /**
+     * Build the menu bar
+     * 
+     * @param items Menu items collection
+     * @param r Root object
+     * @param vistree Visualization tree
+     * @param proj Projection
+     */
     private void recursiveBuildMenu(Collection<JMenuItem> items, Object r, Hierarchy<Object> vistree, Projection proj) {
       // Make a submenu for this element
       final String nam;
@@ -289,6 +297,12 @@ public class ResultWindow extends JFrame implements ResultListener, Visualizatio
       items.add(submenu);
     }
 
+    /**
+     * Make a menu item for a visualizer.
+     *
+     * @param r Visualizer
+     * @return Menu item
+     */
     private JMenuItem makeMenuItemForVisualizer(Object r) {
       if(r instanceof VisualizationMenuAction) {
         final VisualizationMenuAction action = (VisualizationMenuAction) r;
@@ -365,6 +379,9 @@ public class ResultWindow extends JFrame implements ResultListener, Visualizatio
     }
   }
 
+  /**
+   * Menu bar
+   */
   private DynamicMenu menubar;
 
   /**
@@ -432,10 +449,10 @@ public class ResultWindow extends JFrame implements ResultListener, Visualizatio
       if(e instanceof DetailViewSelectedEvent) {
         showSubplot((DetailViewSelectedEvent) e);
       }
-      if(OverviewPlot.OVERVIEW_REFRESHING == e.getActionCommand() && currentSubplot == null) {
+      if(OverviewPlot.OVERVIEW_REFRESHING.equals(e.getActionCommand()) && currentSubplot == null) {
         showPlot(null);
       }
-      if(OverviewPlot.OVERVIEW_REFRESHED == e.getActionCommand() && currentSubplot == null) {
+      if(OverviewPlot.OVERVIEW_REFRESHED.equals(e.getActionCommand()) && currentSubplot == null) {
         showOverview();
       }
     });
@@ -517,7 +534,7 @@ public class ResultWindow extends JFrame implements ResultListener, Visualizatio
   /**
    * Navigate to a subplot.
    *
-   * @param e
+   * @param e Event
    */
   protected void showSubplot(DetailViewSelectedEvent e) {
     if(!single) {
@@ -574,7 +591,7 @@ public class ResultWindow extends JFrame implements ResultListener, Visualizatio
       String filtertext = optionsPanel.filterField.getText();
       try {
         Pattern filter = filtertext.isEmpty() ? null : Pattern.compile(filtertext);
-        new ResultWriter(file, gzip, false, filter).processNewResult(context.getBaseResult());
+        new ResultWriter(file, gzip, false, filter, false).processNewResult(context.getBaseResult());
       }
       catch(PatternSyntaxException e) {
         JOptionPane.showMessageDialog(this, "Filter pattern was not a valid regular expression.", //
@@ -588,7 +605,7 @@ public class ResultWindow extends JFrame implements ResultListener, Visualizatio
    *
    * @author Erich Schubert
    */
-  private class TextWriterPanel extends JPanel {
+  private static class TextWriterPanel extends JPanel {
     /**
      * Serial version.
      */
